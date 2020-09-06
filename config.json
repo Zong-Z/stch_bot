@@ -1,0 +1,10 @@
+{
+  "web_hook": "{WEB_HOOK}",
+  "bot_token": "{BOT_TOKEN}",
+  "bot_port": "8090",
+  "RedisConfig": {
+    "addr": "localhost:6379",
+    "password": "",
+    "db": 0
+  }
+}

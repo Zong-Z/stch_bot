@@ -1,0 +1,14 @@
+{
+  "Start": {
+    "command": "start",
+    "text": "This is a simple Telegrams chat bot (STCHB), written in Go (Golang) for a fun using \"Go Telegram Bot API\". For help \"/help\""
+  },
+  "Help": {
+    "command": "help",
+    "text": "{HELP_TEXT}"
+  },
+  "Settings" : {
+    "command" : "settings",
+    "text" : "{SETTINGS_TEXT}"
+  }
+}
