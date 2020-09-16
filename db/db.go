@@ -13,9 +13,9 @@ const UserPrefix = "USER_"
 
 var (
 	database = redis.NewClient(&redis.Options{
-		Addr:     betypes.Config.RedisConfig.Addr,
-		Password: betypes.Config.RedisConfig.Password,
-		DB:       betypes.Config.RedisConfig.DB,
+		Addr:     betypes.GetBotConfig().RedisConfig.Addr,
+		Password: betypes.GetBotConfig().RedisConfig.Password,
+		DB:       betypes.GetBotConfig().RedisConfig.DB,
 	})
 
 	ctx = database.Context()

@@ -13,10 +13,10 @@ import (
 
 func main() {
 	go func() {
-		log.Fatalln(http.ListenAndServe(":"+betypes.Config.BotPort, nil))
+		log.Fatalln(http.ListenAndServe(":"+betypes.GetBotConfig().BotPort, nil))
 	}()
 
-	newBot, botError := tgbotapi.NewBotAPI(betypes.Config.BotToken)
+	newBot, botError := tgbotapi.NewBotAPI(betypes.GetBotConfig().BotToken)
 	if botError != nil {
 		loger.LogFile.Fatalln("Error creating bot.", botError)
 	}
@@ -30,11 +30,11 @@ func checkOnCommands(update *tgbotapi.Update, bot *tgbotapi.BotAPI) {
 	if update.Message != nil {
 		if update.Message.IsCommand() {
 			switch update.Message.Command() {
-			case betypes.GetStartCommand():
+			case betypes.GetBotCommands().Start.Command:
 				actions.StartCommand(update, bot)
-			case betypes.GetHelpCommand():
+			case betypes.GetBotCommands().Help.Command:
 				actions.HelpCommand(update, bot)
-			case betypes.GetSettingsCommand():
+			case betypes.GetBotCommands().Settings.Command:
 				actions.SettingsCommand(update, bot)
 			}
 			return
@@ -44,7 +44,6 @@ func checkOnCommands(update *tgbotapi.Update, bot *tgbotapi.BotAPI) {
 	}
 
 	if update.CallbackQuery != nil {
-
 		return
 	}
 }
@@ -59,7 +58,7 @@ func getUpdates(bot *tgbotapi.BotAPI) {
 }
 
 func setWebhook(bot *tgbotapi.BotAPI) {
-	_, err := bot.SetWebhook(tgbotapi.NewWebhook(betypes.Config.WebHook))
+	_, err := bot.SetWebhook(tgbotapi.NewWebhook(betypes.GetBotConfig().WebHook))
 	if err != nil {
 		loger.LogFile.Fatalln("Error, web hook.", err)
 	}

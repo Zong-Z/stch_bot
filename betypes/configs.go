@@ -6,7 +6,7 @@ import (
 	"telegram-chat_bot/loger"
 )
 
-var Config config
+var _config config
 
 type config struct {
 	WebHook     string `json:"web_hook"`
@@ -25,8 +25,13 @@ func init() {
 		loger.LogFile.Fatalln("Error, failed to load \"config.json\".", err)
 	}
 
-	err = json.Unmarshal(b, &Config)
+	err = json.Unmarshal(b, &_config)
 	if err != nil {
 		loger.LogFile.Fatalln("Error, incorrect \"config.json\".", err)
 	}
 }
+
+func GetBotConfig() config {
+	return _config
+}
+

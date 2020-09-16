@@ -25,5 +25,5 @@ func StartCommand(update *tgbotapi.Update, bot *tgbotapi.BotAPI) {
 			loger.LogFile.Println("Error, failed to save user to database.")
 		}
 	}
-	bot.Send(tgbotapi.NewMessage(int64(update.Message.From.ID), betypes.GetStartText()))
+	bot.Send(tgbotapi.NewMessage(int64(update.Message.From.ID), betypes.GetBotCommands().Start.Text))
 }

@@ -35,26 +35,6 @@ func init() {
 	}
 }
 
-func GetStartCommand() string {
-	return _commands.Start.Command
-}
-
-func GetHelpCommand() string {
-	return _commands.Help.Command
-}
-
-func GetSettingsCommand() string {
-	return _commands.Settings.Command
-}
-
-func GetStartText() string {
-	return _commands.Start.Text
-}
-
-func GetHelpText() string {
-	return _commands.Help.Text
-}
-
-func GetSettingsText() string {
-	return _commands.Settings.Text
+func GetBotCommands() commands {
+	return _commands
 }

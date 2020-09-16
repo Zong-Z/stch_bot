@@ -7,5 +7,5 @@ import (
 )
 
 func HelpCommand(update *tgbotapi.Update, bot *tgbotapi.BotAPI) {
-	bot.Send(tgbotapi.NewMessage(int64(update.Message.From.ID), betypes.GetHelpText()))
+	bot.Send(tgbotapi.NewMessage(int64(update.Message.From.ID), betypes.GetBotCommands().Help.Text))
 }
