@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"fmt"
 	"telegram-chat_bot/betypes"
 	database "telegram-chat_bot/db"
 	"telegram-chat_bot/loger"
@@ -21,9 +22,16 @@ func StartCommand(update *tgbotapi.Update, bot *tgbotapi.BotAPI) {
 					LanguageCode: update.Message.From.LanguageCode,
 					IsBot:        update.Message.From.IsBot,
 				},
+				Age:  betypes.UserNull,
+				City: betypes.UserNull,
 			}); err != nil {
-			loger.LogFile.Println("Error, failed to save user to database.")
+			loger.ForLog(fmt.Sprintf("Error %v, sending message. Chat ID, %v",
+				err, update.Message.From.ID))
 		}
 	}
-	bot.Send(tgbotapi.NewMessage(int64(update.Message.From.ID), betypes.GetBotCommands().Start.Text))
+	if _, err := bot.Send(tgbotapi.NewMessage(
+		int64(update.Message.From.ID), betypes.GetBotCommands().Start.Text)); err != nil {
+		loger.ForLog(fmt.Sprintf("Error %v, sending message. Chat ID, %v",
+			err, update.Message.From.ID))
+	}
 }

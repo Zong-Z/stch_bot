@@ -26,12 +26,12 @@ var _commands commands
 func init() {
 	b, err := ioutil.ReadFile("commands.json")
 	if err != nil {
-		loger.LogFile.Fatalln("Error, failed to load \"commands.json\".", err)
+		loger.ForLog("Error, failed to load \"commands.json\".", err)
 	}
 
 	err = json.Unmarshal(b, &_commands)
 	if err != nil {
-		loger.LogFile.Fatalln("Error, incorrect bot \"commands.json\".", err)
+		loger.ForLog("Error, incorrect bot \"commands.json\".", err)
 	}
 }
 

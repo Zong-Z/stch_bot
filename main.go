@@ -18,10 +18,10 @@ func main() {
 
 	newBot, botError := tgbotapi.NewBotAPI(betypes.GetBotConfig().BotToken)
 	if botError != nil {
-		loger.LogFile.Fatalln("Error creating bot.", botError)
+		loger.ForLog("Error creating bot.", botError)
 	}
-	loger.LogFile.Println("Bot have created successfully.")
-	loger.LogFile.Println(fmt.Sprintf("Authorized on account %s.", newBot.Self.FirstName))
+	loger.ForLog("Bot have created successfully.")
+	loger.ForLog(fmt.Sprintf("Authorized on account %s.", newBot.Self.FirstName))
 
 	getUpdates(newBot)
 }
@@ -39,11 +39,11 @@ func checkOnCommands(update *tgbotapi.Update, bot *tgbotapi.BotAPI) {
 			}
 			return
 		}
-
 		return
 	}
 
 	if update.CallbackQuery != nil {
+		actions.SettingsCommand(update, bot)
 		return
 	}
 }
@@ -60,6 +60,6 @@ func getUpdates(bot *tgbotapi.BotAPI) {
 func setWebhook(bot *tgbotapi.BotAPI) {
 	_, err := bot.SetWebhook(tgbotapi.NewWebhook(betypes.GetBotConfig().WebHook))
 	if err != nil {
-		loger.LogFile.Fatalln("Error, web hook.", err)
+		loger.ForLog("Error, web hook.", err)
 	}
 }

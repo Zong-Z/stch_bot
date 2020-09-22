@@ -7,8 +7,8 @@
     "command": "help",
     "text": "{HELP_TEXT}"
   },
-  "Settings" : {
-    "command" : "settings",
-    "text" : "{SETTINGS_TEXT}"
+  "Settings": {
+    "command": "settings",
+    "text": "{SETTINGS_TEXT}"
   }
 }
