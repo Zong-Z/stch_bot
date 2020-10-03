@@ -12,6 +12,10 @@ var (
 	logFile    = log.New(outfile, "", 0)
 )
 
+// ForLog this is a function to display the passed arguments
+// in the console and save to a file.
 func ForLog(v ...interface{}) {
-	logFile.Println(fmt.Sprintf("%v: %v", time.Now(), v))
+	str := fmt.Sprintf("%v: %v", time.Now(), v)
+	logFile.Println(str)
+	log.Println(str)
 }

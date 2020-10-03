@@ -21,6 +21,7 @@ var (
 	ctx = database.Context()
 )
 
+// SaveUser save the user in the database.
 func SaveUser(user betypes.User) error {
 	loger.ForLog("Saving the user to the DB, ID", user.ID)
 	j, err := json.Marshal(user)
@@ -39,10 +40,11 @@ func SaveUser(user betypes.User) error {
 	return err
 }
 
-func GetUser(userID int) (*betypes.User, error) {
+// GetUser return user form database.
+func GetUser(userID int64) (*betypes.User, error) {
 	loger.ForLog("Getting a user from a DB, ID", userID)
 	u := &betypes.User{}
-	r, err := database.Get(ctx, userPrefix+strconv.FormatInt(int64(userID), 10)).Result()
+	r, err := database.Get(ctx, userPrefix+strconv.FormatInt(userID, 10)).Result()
 	if err == redis.Nil {
 		loger.ForLog("User not found.", err)
 		return nil, err

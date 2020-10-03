@@ -1,9 +1,12 @@
 package chat
 
-// import "telegram-chat_bot/betypes"
+/*
+import (
+	"telegram-chat_bot/betypes"
+)
 
-// type chats map[int][2]betypes.User
-
-// func (c *chats) New(users [2]betypes.User)  {
-
-// }
+type Chat struct {
+	Users []betypes.User `json:"users"`
+	ID    uint64         `json:"id"`
+}
+*/

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"telegram-chat_bot/betypes"
 	"telegram-chat_bot/loger"
-	"telegram-chat_bot/src/actions"
+	actions "telegram-chat_bot/src/bot"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -16,12 +16,13 @@ func main() {
 		log.Fatalln(http.ListenAndServe(":"+betypes.GetBotConfig().BotPort, nil))
 	}()
 
-	newBot, botError := tgbotapi.NewBotAPI(betypes.GetBotConfig().BotToken)
-	if botError != nil {
-		loger.ForLog("Error creating bot.", botError)
+	newBot, err := tgbotapi.NewBotAPI(betypes.GetBotConfig().BotToken)
+	if err != nil {
+		loger.ForLog("Error creating bot.", err)
+		panic(err)
 	}
-	loger.ForLog("Bot have created successfully.")
 	loger.ForLog(fmt.Sprintf("Authorized on account %s.", newBot.Self.FirstName))
+	loger.ForLog("Bot have created successfully.")
 
 	getUpdates(newBot)
 }
@@ -29,13 +30,24 @@ func main() {
 func checkOnCommands(update *tgbotapi.Update, bot *tgbotapi.BotAPI) {
 	if update.Message != nil {
 		if update.Message.IsCommand() {
+			loger.ForLog(fmt.Sprintf("Command: \"%s\", form user ID, %v",
+				update.Message.Command(), update.Message.From.ID))
 			switch update.Message.Command() {
 			case betypes.GetBotCommands().Start.Command:
-				actions.StartCommand(update, bot)
+				actions.StartCommand(&betypes.User{
+					User: tgbotapi.User{
+						ID:           update.Message.From.ID,
+						FirstName:    update.Message.From.FirstName,
+						LastName:     update.Message.From.LastName,
+						UserName:     update.Message.From.UserName,
+						LanguageCode: update.Message.From.LanguageCode,
+						IsBot:        update.Message.From.IsBot,
+					},
+				}, bot)
 			case betypes.GetBotCommands().Help.Command:
-				actions.HelpCommand(update, bot)
+				actions.HelpCommand(int64(update.Message.From.ID), bot)
 			case betypes.GetBotCommands().Settings.Command:
-				actions.SettingsCommand(update, bot)
+				actions.SettingsCommand(int64(update.Message.From.ID), bot)
 			}
 			return
 		}
@@ -43,7 +55,7 @@ func checkOnCommands(update *tgbotapi.Update, bot *tgbotapi.BotAPI) {
 	}
 
 	if update.CallbackQuery != nil {
-		actions.SettingsCommand(update, bot)
+		loger.ForLog(fmt.Sprintf("CallbackQuery: \"%v\", form user ID, %v", update.CallbackQuery, update.CallbackQuery.From.ID))
 		return
 	}
 }
