@@ -16,9 +16,11 @@ type Commands struct {
 		Command string `json:"command"`
 		Text    string `json:"text"`
 	} `json:"help"`
+	StartChatting struct {
+		Command string `json:"command"`
+	} `json:"start_chatting"`
 	Settings struct {
 		Command string `json:"command"`
-		Text    string `json:"text"`
 	} `json:"settings"`
 }
 

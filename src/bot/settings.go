@@ -20,8 +20,8 @@ var keyboards = []Keyboard{
 		Name: "settings",
 		Keyboard: tgbotapi.InlineKeyboardMarkup{InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
 			tgbotapi.NewInlineKeyboardRow(
-			//TODO:	tgbotapi.NewInlineKeyboardButtonData("Age", "age"),
-			//TODO:	tgbotapi.NewInlineKeyboardButtonData("City", "city"),
+				/*//TODO:*/ tgbotapi.NewInlineKeyboardButtonData("Age", "age"),
+				/*//TODO:*/ tgbotapi.NewInlineKeyboardButtonData("City", "city"),
 			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Close", "close"),
@@ -30,45 +30,37 @@ var keyboards = []Keyboard{
 	},
 }
 
-// SettingsCommand sends the user a keyboard with settings.
-func SettingsCommand(chatID int64, bot *tgbotapi.BotAPI) {
-	keyboard, err := getKeyboard("settings")
+// SettingsCommandMarkup sends the user a keyboard with settings.
+func SettingsCommandMarkup(chatID int64, bot *tgbotapi.BotAPI) {
+	markup, err := getKeyboard("settings")
 	if err != nil {
-		loger.ForLog(fmt.Sprintf("Error %v. Chat ID", err))
+		loger.ForLog(fmt.Sprintf("Error %v. Chat ID %v.", err, chatID))
 		return
 	}
 
 	if _, err := bot.Send(tgbotapi.MessageConfig{
 		BaseChat: tgbotapi.BaseChat{
 			ChatID:      chatID,
-			ReplyMarkup: (*keyboard).Keyboard,
+			ReplyMarkup: markup.Keyboard,
 		},
 		ParseMode: "MARKDOWN",
-		Text:      fmt.Sprintf("*%s*", strings.ToTitle(keyboard.Name)),
+		Text:      fmt.Sprintf("*%s*", strings.ToTitle(markup.Name)),
 	}); err != nil {
 		loger.ForLog(fmt.Sprintf("Error %v, sending message. Chat ID, %v", err, chatID))
 	}
 }
 
-// CloseReplyMarkupCommand delete markup from chat.
-func CloseReplyMarkupCommand(chatID int64, messageID int, bot *tgbotapi.BotAPI) {
-	if _, err := bot.Send(tgbotapi.EditMessageReplyMarkupConfig{
-		BaseEdit: tgbotapi.BaseEdit{
-			ChatID:    chatID,
-			MessageID: messageID,
-			ReplyMarkup: &tgbotapi.InlineKeyboardMarkup{
-				InlineKeyboard: make([][]tgbotapi.InlineKeyboardButton, 0),
-			},
-		},
-	}); err != nil {
-		loger.ForLog(fmt.Sprintf("Error %v, sending message. Chat ID, %v", err, chatID))
+// DeleteMessage delete message from chat.
+func DeleteMessage(chatID int64, messageID int, bot *tgbotapi.BotAPI) {
+	if _, err := bot.Send(tgbotapi.NewDeleteMessage(chatID, messageID)); err != nil {
+		loger.ForLog(fmt.Sprintf("Error %v, sending message. Chat ID, %v.", err, chatID))
 	}
 }
 
 func getKeyboard(keyboardName string) (*Keyboard, error) {
-	for _, i := range keyboards {
-		if i.Name == keyboardName {
-			return &i, nil
+	for i := 0; i < len(keyboards); i++ {
+		if strings.EqualFold(keyboards[i].Name, keyboardName) {
+			return &keyboards[i], nil
 		}
 	}
 	return nil, errors.New("keyboard not found")

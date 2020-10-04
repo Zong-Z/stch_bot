@@ -5,7 +5,10 @@
   },
   "help": {
     "command": "help",
-    "text": "This is a simple telegram chat bot (STCHB), written in Go (Golang) for a fun using \"Go Telegram Bot API\"."
+    "text": "This is a simple telegram chat bot (STCHB), written in Go (Golang) for a fun using \"Go Telegram Bot API\".\nYou can setting up your age and interlocutor age \"/settings\"."
+  },
+  "start_chatting": {
+    "command": "start_chatting"
   },
   "settings": {
     "command": "settings"

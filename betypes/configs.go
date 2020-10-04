@@ -6,8 +6,8 @@ import (
 	"telegram-chat_bot/loger"
 )
 
-// Сonfig struct for saving bot settings.
-type Сonfig struct {
+// Config struct for saving bot settings.
+type Config struct {
 	WebHook     string `json:"web_hook"`
 	BotToken    string `json:"bot_token"`
 	BotPort     string `json:"bot_port"`
@@ -18,7 +18,7 @@ type Сonfig struct {
 	} `json:"redis_config"`
 }
 
-var config Сonfig
+var config Config
 
 func init() {
 	b, err := ioutil.ReadFile("config/config.json")
@@ -33,6 +33,6 @@ func init() {
 }
 
 // GetBotConfig return bot config.
-func GetBotConfig() Сonfig {
+func GetBotConfig() Config {
 	return config
 }
