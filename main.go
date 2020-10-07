@@ -8,6 +8,7 @@ import (
 	"telegram-chat_bot/betypes"
 	"telegram-chat_bot/loger"
 	actions "telegram-chat_bot/src/bot"
+	"telegram-chat_bot/src/chat"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -17,15 +18,15 @@ func main() {
 		log.Fatalln(http.ListenAndServe(":"+betypes.GetBotConfig().BotPort, nil))
 	}()
 
-	newBot, err := tgbotapi.NewBotAPI(betypes.GetBotConfig().BotToken)
+	bot, err := tgbotapi.NewBotAPI(betypes.GetBotConfig().BotToken)
 	if err != nil {
-		loger.ForLog("Error creating bot.", err)
+		loger.ForLog(fmt.Sprintf("Error &v, creating bot.", err))
 		panic(err)
 	}
-	loger.ForLog(fmt.Sprintf("Authorized on account %s.", newBot.Self.FirstName))
+	loger.ForLog(fmt.Sprintf("Authorized on account %s.", bot.Self.FirstName))
 	loger.ForLog("Bot have created successfully.")
 
-	getUpdates(newBot)
+	getUpdates(bot)
 }
 
 func getUpdates(bot *tgbotapi.BotAPI) {
@@ -33,7 +34,7 @@ func getUpdates(bot *tgbotapi.BotAPI) {
 	updates := bot.ListenForWebhook("/")
 
 	for update := range updates {
-		go check(&update, bot)
+		go checkUpdate(&update, bot)
 	}
 }
 
@@ -44,7 +45,7 @@ func setWebhook(bot *tgbotapi.BotAPI) {
 	}
 }
 
-func check(update *tgbotapi.Update, bot *tgbotapi.BotAPI) {
+func checkUpdate(update *tgbotapi.Update, bot *tgbotapi.BotAPI) {
 	if update.Message != nil && update.Message.IsCommand() {
 		checkCommand(update.Message, bot)
 	}
@@ -59,17 +60,22 @@ func checkCommand(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 		message.Command(), message.From.ID))
 	switch message.Command() {
 	case betypes.GetBotCommands().Start.Command:
-		actions.StartCommand(&betypes.User{User: tgbotapi.User{
-			ID:           message.From.ID,
-			FirstName:    message.From.FirstName,
-			LastName:     message.From.LastName,
-			UserName:     message.From.UserName,
-			LanguageCode: message.From.LanguageCode,
-			IsBot:        message.From.IsBot,
-		}}, bot)
+		actions.StartCommand(&betypes.User{
+			User: tgbotapi.User{
+				ID:           message.From.ID,
+				FirstName:    message.From.FirstName,
+				LastName:     message.From.LastName,
+				UserName:     message.From.UserName,
+				LanguageCode: message.From.LanguageCode,
+				IsBot:        message.From.IsBot,
+			},
+			Age:  "",
+			City: "",
+		}, bot)
 	case betypes.GetBotCommands().Help.Command:
 		actions.HelpCommand(int64(message.From.ID), bot)
 	case betypes.GetBotCommands().StartChatting.Command:
+		chat.AddUserToQueue(int64(message.From.ID), bot)
 	case betypes.GetBotCommands().Settings.Command:
 		actions.SettingsCommandMarkup(int64(message.From.ID), bot)
 	}

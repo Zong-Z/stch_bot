@@ -20,19 +20,4 @@ func StartCommand(user *betypes.User, bot *tgbotapi.BotAPI) {
 	if _, err := bot.Send(tgbotapi.NewMessage(int64(user.ID), betypes.GetBotCommands().Start.Text)); err != nil {
 		loger.ForLog(fmt.Sprintf("Error %v, sending message. Chat ID, %v", err, user.ID))
 	}
-
-	if _, err := bot.Send(tgbotapi.MessageConfig{
-		BaseChat: tgbotapi.BaseChat{
-			ChatID:              0,
-			ChannelUsername:     "",
-			ReplyToMessageID:    0,
-			ReplyMarkup:         nil,
-			DisableNotification: false,
-		},
-		Text:                  "",
-		ParseMode:             "",
-		DisableWebPagePreview: false,
-	}); err != nil {
-		loger.ForLog(fmt.Sprintf("Error %v, sending message. Chat ID, %v", err, user.ID))
-	}
 }

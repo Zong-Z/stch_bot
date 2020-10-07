@@ -2,14 +2,16 @@ package database
 
 import (
 	"encoding/json"
+	"github.com/go-redis/redis/v8"
 	"strconv"
 	"telegram-chat_bot/betypes"
 	"telegram-chat_bot/loger"
-
-	"github.com/go-redis/redis/v8"
 )
 
-const userPrefix = "USER_"
+const (
+	userPrefix = "USER_"
+	chatPrefix = "CHAT_"
+)
 
 var (
 	database = redis.NewClient(&redis.Options{
@@ -62,3 +64,44 @@ func GetUser(userID int64) (*betypes.User, error) {
 	loger.ForLog("User successfully received from DB.")
 	return u, nil
 }
+
+/*
+func AddChat(chat betypes.Chat) error {
+	loger.ForLog("Adding the chat to the DB, ID.", chat.ID)
+	j, err := json.Marshal(chat)
+	if err != nil {
+		loger.ForLog("Error, could not marshal chat.", err)
+	}
+
+	err = database.Set(ctx, chatPrefix+strconv.FormatInt(int64(chat.ID), 10), string(j), 0).Err()
+	if err != nil {
+		loger.ForLog("Error, could not add chat to the DB", err)
+		return err
+	}
+
+	loger.ForLog("Chat have successfully added to DB, ID", chat.ID)
+	return err
+}
+
+func GetChat(chatID uint64) (*betypes.Chat, error) {
+	loger.ForLog("Getting a chat from a DB, ID", chatID)
+	c := &betypes.Chat{}
+	r, err := database.Get(ctx, chatPrefix+strconv.FormatInt(int64(chatID), 10)).Result()
+	if err == redis.Nil {
+		loger.ForLog("Chat not found.", err)
+		return nil, err
+	} else if err != nil {
+		loger.ForLog("Error, could not get chat from DB, ID", chatID)
+		return nil, err
+	}
+
+	err = json.Unmarshal([]byte(r), &u)
+	if err != nil {
+		loger.ForLog("Error, could not unmarshal chat.")
+		return nil, err
+	}
+
+	loger.ForLog("Chat successfully received from DB.")
+	return c, nil
+}
+*/
