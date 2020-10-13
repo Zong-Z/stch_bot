@@ -1,10 +1,14 @@
 {
   "web_hook": "{WEB_HOOK}",
   "bot_token": "{BOT_TOKEN}",
-  "bot_port": "8090",
+  "bot_port": "{BOT_PORT}",
   "redis_config": {
-    "addr": "localhost:6379",
-    "password": "",
+    "addr": "{REDIS_ADDR}",
+    "password": "{REDIS_PASSWORD}",
     "db": 0
+  },
+  "chats_config": {
+    "queue_size": 100,
+    "users_count": 2
   }
 }

@@ -25,8 +25,9 @@ Go to [releases page](https://github.com/Zong-Z/stch_bot/releases) for details.
     
 ## TODO
 
-- - [ ]
-- - [ ]
+- - [ ] Ability to choose the city.
+- - [ ] Ability to choose age.
+- - [ ] Ability to send photos to chat.
 
 ## Contributions
 

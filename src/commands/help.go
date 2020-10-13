@@ -11,6 +11,6 @@ import (
 // HelpCommand sends help text to user.
 func HelpCommand(chatID int64, bot *tgbotapi.BotAPI) {
 	if _, err := bot.Send(tgbotapi.NewMessage(chatID, betypes.GetBotCommands().Help.Text)); err != nil {
-		loger.ForLog(fmt.Sprintf("Error %v, sending message. Chat ID, %v", err, chatID))
+		loger.ForLog(fmt.Sprintf("Error %v, sending message. Chat ID, %v.", err, chatID))
 	}
 }

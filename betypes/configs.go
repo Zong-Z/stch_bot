@@ -16,6 +16,10 @@ type Config struct {
 		Password string `json:"password"`
 		DB       int    `json:"db"`
 	} `json:"redis_config"`
+	ChatsConfig struct {
+		QueueSize  int `json:"queue_size"`
+		UsersCount int `json:"users_count"`
+	} `json:"chats_config"`
 }
 
 var config Config
