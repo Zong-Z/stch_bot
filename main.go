@@ -26,8 +26,7 @@ func main() {
 	loger.ForLog(fmt.Sprintf("Authorized on account %s.", bot.Self.FirstName))
 	loger.ForLog("Bot have created successfully.")
 
-	getUpdates(bot, betypes.NewChats(
-		betypes.GetBotConfig().ChatsConfig.UsersCount, betypes.GetBotConfig().ChatsConfig.QueueSize, bot))
+	getUpdates(bot, betypes.NewChats(2 /*Chat for two users*/, betypes.GetBotConfig().ChatsConfig.QueueSize, bot))
 }
 
 func getUpdates(bot *tgbotapi.BotAPI, chats *betypes.Chats) {
@@ -58,7 +57,19 @@ func checkUpdate(update *tgbotapi.Update, chats *betypes.Chats, bot *tgbotapi.Bo
 	}
 
 	if update.Message != nil && !update.Message.IsCommand() {
-		chats.SendMessageToInterlocutors(update.Message.Text, update.Message.From.ID, bot)
+		if chats.IsTheUserInChat(update.Message.From.ID) {
+			chats.SendMessageToInterlocutors(update.Message.Text, update.Message.From.ID, bot)
+			return
+		}
+		if _, err := bot.Send(tgbotapi.MessageConfig{
+			BaseChat: tgbotapi.BaseChat{
+				ChatID: int64(update.Message.From.ID),
+			},
+			Text:      "*Unknown message* \"/help\".",
+			ParseMode: "MARKDOWN",
+		}); err != nil {
+			loger.ForLog(fmt.Sprintf("Error %s, sending message. User ID - %d.", err.Error(), update.Message.From.ID))
+		}
 		return
 	}
 }
@@ -82,7 +93,7 @@ func checkCommand(message *tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi
 		}, bot)
 	case betypes.GetBotCommands().Help.Command:
 		actions.HelpCommand(int64(message.From.ID), bot)
-	case betypes.GetBotCommands().StartChatting.Command:
+	case betypes.GetBotCommands().Chatting.Start:
 		u, err := database.GetUser(int64(message.From.ID))
 		if err != nil && err.Error() == "redis: nil" /*If no user is found*/ {
 			loger.ForLog(fmt.Sprintf("User not found, user ID, %d.", int64(message.From.ID)))
@@ -93,7 +104,7 @@ func checkCommand(message *tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi
 				Text:      "*You are not registered.*\"/start\"",
 				ParseMode: "MARKDOWN",
 			}); err != nil {
-				loger.ForLog(fmt.Sprintf("Error %s, sending message. User ID - %d.", err.Error(), int64(message.From.ID)))
+				loger.ForLog(fmt.Sprintf("Error %s, sending message. User ID - %d.", err.Error(), message.From.ID))
 			}
 			return
 		}
@@ -103,7 +114,9 @@ func checkCommand(message *tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi
 			panic(err)
 		}
 
-		chats.AddUserToQueue(u, bot)
+		chats.StartChatting(u, bot)
+	case betypes.GetBotCommands().Chatting.Stop:
+		chats.StopChatting(message.From.ID, bot)
 	case betypes.GetBotCommands().Settings.Command:
 		actions.SettingsCommandMarkup(int64(message.From.ID), bot)
 	}

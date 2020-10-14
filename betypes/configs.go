@@ -17,8 +17,7 @@ type Config struct {
 		DB       int    `json:"db"`
 	} `json:"redis_config"`
 	ChatsConfig struct {
-		QueueSize  int `json:"queue_size"`
-		UsersCount int `json:"users_count"`
+		QueueSize int `json:"queue_size"`
 	} `json:"chats_config"`
 }
 
