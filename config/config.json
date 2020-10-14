@@ -8,7 +8,6 @@
     "db": 0
   },
   "chats_config": {
-    "queue_size": 100,
-    "users_count": 2
+    "queue_size": 100
   }
 }
