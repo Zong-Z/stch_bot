@@ -140,6 +140,7 @@ func (chats *Chats) getChatByUserID(userID int) *Chat {
 	return nil
 }
 
+// IsTheUserInChat return true if user is in chat.
 func (chats *Chats) IsTheUserInChat(userID int) bool {
 	for _, chat := range chats.Chats {
 		for _, user := range chat.Users {
