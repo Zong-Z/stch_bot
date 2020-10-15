@@ -21,7 +21,7 @@ type Chat struct {
 // UsersQueue users queue.
 type UsersQueue struct {
 	User   chan User `json:"user"`
-	Buffer int       `json:"buffer"`
+	Buffer uint      `json:"buffer"`
 }
 
 // Chats struct for saving all Chat with User queue.
