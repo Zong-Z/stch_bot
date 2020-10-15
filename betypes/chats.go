@@ -8,7 +8,7 @@ import (
 )
 
 // NewChats returns a pointer to new Chats.
-func NewChats(usersCount, buffer int, bot *tgbotapi.BotAPI) *Chats {
+func NewChats(usersCount, buffer uint, bot *tgbotapi.BotAPI) *Chats {
 	chats := &Chats{
 		Chats: make([]Chat, 0),
 		Queue: UsersQueue{
@@ -17,17 +17,19 @@ func NewChats(usersCount, buffer int, bot *tgbotapi.BotAPI) *Chats {
 		},
 	}
 
-	go func(chats *Chats, usersCount int, bot *tgbotapi.BotAPI) {
-		chats.Chats = append(chats.Chats, Chat{})
-
+	go func(chats *Chats, usersCount uint, bot *tgbotapi.BotAPI) {
 		for user := range chats.Queue.User {
+			if len(chats.Chats) == 0 {
+				chats.Chats = append(chats.Chats, Chat{})
+			}
+
 			currentChat := &chats.Chats[len(chats.Chats)-1]
 
-			if len(currentChat.Users) < usersCount {
+			if len(currentChat.Users) < int(usersCount) {
 				currentChat.Users = append(currentChat.Users, user)
 			}
 
-			if len(currentChat.Users) == usersCount {
+			if len(currentChat.Users) == int(usersCount) {
 				for _, user := range currentChat.Users {
 					_, err := bot.Send(tgbotapi.NewMessage(int64(user.ID),
 						"The interlocutor is found.\nWho will be the first?"))
