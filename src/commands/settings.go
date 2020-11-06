@@ -1,67 +1,117 @@
-package actions
+package commands
 
-import (
-	"errors"
-	"fmt"
-	"strings"
-	"telegram-chat_bot/loger"
+// import (
+// 	"fmt"
+// 	"strings"
+// 	"telegram-chat_bot/betypes"
+// 	database "telegram-chat_bot/db"
+// 	"telegram-chat_bot/loger"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-)
+// 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+// )
 
-// Keyboard stores the keyboard and keyboard name.
-type Keyboard struct {
-	Name     string                        `json:"name"`
-	Keyboard tgbotapi.InlineKeyboardMarkup `json:"keyboard"`
-}
+// const agePrefix = "user age:"
 
-var keyboards = []Keyboard{
-	{
-		Name: "settings",
-		Keyboard: tgbotapi.InlineKeyboardMarkup{InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
-			tgbotapi.NewInlineKeyboardRow(
-				/*//TODO:*/ tgbotapi.NewInlineKeyboardButtonData("Age", "age"),
-				/*//TODO:*/ tgbotapi.NewInlineKeyboardButtonData("City", "city"),
-			),
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("Close", "close"),
-			),
-		}},
-	},
-}
+// // Markup stores the markup and keyboard name.
+// type Markup struct {
+// 	Name   string                        `json:"name"`
+// 	Markup tgbotapi.InlineKeyboardMarkup `json:"keyboard"`
+// }
 
-// SettingsCommandMarkup sends the user a keyboard with settings.
-func SettingsCommandMarkup(chatID int64, bot *tgbotapi.BotAPI) {
-	markup, err := getKeyboard("settings")
-	if err != nil {
-		loger.ForLog(fmt.Sprintf("Error %v. Chat ID %v.", err, chatID))
-		return
-	}
+// var markups = []Markup{
+// 	{
+// 		Name: "settings",
+// 		Markup: tgbotapi.InlineKeyboardMarkup{InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
+// 			tgbotapi.NewInlineKeyboardRow(
+// 				tgbotapi.NewInlineKeyboardButtonData("Age.", "age"),
+// 				/*//TODO:*/ tgbotapi.NewInlineKeyboardButtonData("City.", "city"),
+// 			),
+// 			tgbotapi.NewInlineKeyboardRow(
+// 				tgbotapi.NewInlineKeyboardButtonData("Close.", "close"),
+// 			),
+// 		}},
+// 	},
+// 	{
+// 		Name: "age",
+// 		Markup: tgbotapi.InlineKeyboardMarkup{InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
+// 			tgbotapi.NewInlineKeyboardRow(
+// 				tgbotapi.NewInlineKeyboardButtonData("Sixteen and below.", betypes.UserAgeSixteenAndBelow),
+// 				tgbotapi.NewInlineKeyboardButtonData("Eighteen or more.", betypes.UserAgeEighteenOrMore),
+// 			),
+// 			tgbotapi.NewInlineKeyboardRow(
+// 				tgbotapi.NewInlineKeyboardButtonData("<-Go back.", "settings"),
+// 			),
+// 		}},
+// 	},
+// }
 
-	if _, err := bot.Send(tgbotapi.MessageConfig{
-		BaseChat: tgbotapi.BaseChat{
-			ChatID:      chatID,
-			ReplyMarkup: markup.Keyboard,
-		},
-		ParseMode: "MARKDOWN",
-		Text:      fmt.Sprintf("*%s*", strings.ToTitle(markup.Name)),
-	}); err != nil {
-		loger.ForLog(fmt.Sprintf("Error %v, sending message. Chat ID, %v", err, chatID))
-	}
-}
+// // SettingsCommandMarkup sends the user a keyboard with settings.
+// func SettingsCommandMarkup(chatID int64, bot *tgbotapi.BotAPI) {
+// 	markup := findMarkup("settings")
+// 	if markup != nil {
+// 		if _, err := bot.Send(tgbotapi.MessageConfig{
+// 			BaseChat: tgbotapi.BaseChat{
+// 				ChatID:      chatID,
+// 				ReplyMarkup: (*markup).Markup,
+// 			},
+// 			ParseMode: "MARKDOWN",
+// 			Text:      fmt.Sprintf("*%s*", strings.ToTitle(markup.Name)),
+// 		}); err != nil {
+// 			loger.ForLog(fmt.Sprintf("Error %s, sending message. Chat ID - %d", err.Error(), chatID))
+// 		}
+// 	}
+// }
 
-// DeleteMessage delete message from chat.
-func DeleteMessage(chatID int64, messageID int, bot *tgbotapi.BotAPI) {
-	if _, err := bot.Send(tgbotapi.NewDeleteMessage(chatID, messageID)); err != nil {
-		loger.ForLog(fmt.Sprintf("Error %v, sending message. Chat ID, %v.", err, chatID))
-	}
-}
+// // AnswerOnCallback
+// func AnswerOnCallbackSettings(chatID int64, messageID int,
+// 	callbackQueryData, callbackQueryID string, bot *tgbotapi.BotAPI) {
+// 	if strings.EqualFold(callbackQueryData, "close") {
+// 		deleteMessage(chatID, messageID, bot)
 
-func getKeyboard(keyboardName string) (*Keyboard, error) {
-	for i := 0; i < len(keyboards); i++ {
-		if strings.EqualFold(keyboards[i].Name, keyboardName) {
-			return &keyboards[i], nil
-		}
-	}
-	return nil, errors.New("keyboard not found")
-}
+// 		newCallback := tgbotapi.NewCallback(callbackQueryID, "Closed")
+// 		if _, err := bot.AnswerCallbackQuery(newCallback); err != nil {
+// 			loger.ForLog(fmt.Sprintf("Error %s, answer CallbackQuery. Chat ID - %d",
+// 				err.Error(), chatID))
+// 		}
+
+// 		return
+// 	}
+
+// 	markup := findMarkup(callbackQueryData)
+// 	if markup != nil {
+// 		if _, err := bot.Send(tgbotapi.NewEditMessageReplyMarkup(chatID, messageID, markup.Markup)); err != nil {
+// 			loger.ForLog(fmt.Sprintf("Error %s, sending message. Chat ID - %d", err.Error(), chatID))
+// 		}
+
+// 		return
+// 	}
+
+// 	u, err := database.GetUser(chatID)
+// 	if err != nil {
+// 		loger.ForLog("Error, could not read user from DB. Chat ID - ", chatID)
+// 		return
+// 	}
+
+// 	u.Age = callbackQueryData
+// 	err = database.SaveUser(*u)
+// 	if err != nil {
+// 		return
+// 	}
+// 	return
+// }
+
+// func deleteMessage(chatID int64, messageID int, bot *tgbotapi.BotAPI) {
+// 	if _, err := bot.Send(tgbotapi.NewDeleteMessage(chatID, messageID)); err != nil {
+// 		loger.ForLog(fmt.Sprintf("Error %s, sending message. Chat ID - %d", err.Error(), chatID))
+// 	}
+// }
+
+// func findMarkup(markupName string) *Markup {
+// 	for i := 0; i < len(markups); i++ {
+// 		if strings.EqualFold(markups[i].Name, markupName) {
+// 			return &markups[i]
+// 		}
+// 	}
+
+// 	return nil
+// }

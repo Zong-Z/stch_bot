@@ -1,4 +1,4 @@
-package loger
+package logger
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ var (
 // ForLog this is a function to display the passed arguments
 // in the console and save to a file.
 func ForLog(v ...interface{}) {
-	str := fmt.Sprintf("%v: %v", time.Now().Format("01-02-2006 15:04:05.0000"), v)
+	str := fmt.Sprintf("%s: %v", time.Now().Format("01-02-2006 15:04:05.0000"), v)
 	logFile.Println(str)
 	log.Println(str)
 }

@@ -3,7 +3,7 @@
 **STCHB** - is a simple Telegram chat-bot written in Go (Golang) for a fun, using "[Go Telegram Bot API](https://github.com/go-telegram-bot-api/telegram-bot-api)"
 
 ![Gopher image](https://golang.org/doc/gopher/fiveyears.jpg)
-*Gopher image by [Renee French][rf], licensed under [Creative Commons 3.0 Attributions license][cc3-by].*   
+*Gopher image by [Renee French][rf], licensed under [Creative Commons 3.0 Attributions license][cc3-by].*
 
 ## Downloads
 
@@ -22,6 +22,8 @@ Go to [releases page](https://github.com/Zong-Z/stch_bot/releases) for details.
     - `go get -u github.com/go-telegram-bot-api/telegram-bot-api`
 - [Redis client for Golang](https://github.com/go-redis/redis)
     - `go get github.com/go-redis/redis/v8`
+- [Go package for UUIDs](https://github.com/google/uuid)
+    - `go get github.com/google/uuid`
     
 ## TODO
 

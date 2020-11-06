@@ -2,151 +2,166 @@ package betypes
 
 import (
 	"fmt"
-	"telegram-chat_bot/loger"
+	"strings"
+	"telegram-chat_bot/logger"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/google/uuid"
 )
 
-// NewChats returns a pointer to new Chats.
-func NewChats(usersCount, buffer uint, bot *tgbotapi.BotAPI) *Chats {
+// NewChats return new Chats.
+//
+// In goroutine starts a loop that adds users(User) to the chat([] Chat).
+// usersCount saves the maximum number of users in the chat.
+func NewChats(buffer, usersCount uint) *Chats {
 	chats := &Chats{
-		Chats: make([]Chat, 0),
-		Queue: UsersQueue{
-			User:   make(chan User, buffer),
-			Buffer: buffer,
-		},
+		Chats:      make([]Chat, 0),
+		UsersCount: usersCount,
+		UsersQueue: make(chan User, buffer),
 	}
 
-	go func(chats *Chats, usersCount uint, bot *tgbotapi.BotAPI) {
-		for user := range chats.Queue.User {
-			if len(chats.Chats) == 0 {
-				chats.Chats = append(chats.Chats, Chat{})
-			}
-
-			currentChat := &chats.Chats[len(chats.Chats)-1]
-
-			if len(currentChat.Users) < int(usersCount) {
-				currentChat.Users = append(currentChat.Users, user)
-			}
-
-			if len(currentChat.Users) == int(usersCount) {
-				for _, user := range currentChat.Users {
-					_, err := bot.Send(tgbotapi.NewMessage(int64(user.ID),
-						"The interlocutor is found.\nWho will be the first?"))
-					if err != nil {
-						loger.ForLog(fmt.Sprintf("Error %s, sending message, User ID - %d", err.Error(), user.ID))
-					}
-				}
-
-				chats.Chats = append(chats.Chats, Chat{})
-			}
-		}
-	}(chats, usersCount, bot)
+	go chats.startAddingUsers()
 
 	return chats
 }
 
-// StartChatting adds a user to the chatting queue.
-func (chats *Chats) StartChatting(user *User, bot *tgbotapi.BotAPI) {
-	msg := tgbotapi.MessageConfig{
-		BaseChat: tgbotapi.BaseChat{
-			ChatID: int64(user.ID),
-		},
-		Text:      "*You are already added to the queue.*",
-		ParseMode: "MARKDOWN",
-	}
-	if !chats.IsTheUserInChat(user.ID) {
-		chats.Queue.User <- *user
-		msg.Text = "*You are successfully added to the queue.\nPlease wait...\nWe are looking for your interlocutor...*"
-	}
+// startAddingUsers start adding user to chats.
+//
+// It is recommended to run in goroutine.
+// Gets User from UsersQueue and adds
+// new chats(To [] Chat) to which User are added depending on age, city, etc.
+func (chats *Chats) startAddingUsers() {
+	for user := range chats.UsersQueue {
+		UUID := uuid.New().String()
+		if strings.EqualFold(UUID, "") {
+			err := fmt.Sprintf("Error, bad UUID - %s", UUID)
+			logger.ForLog(err)
+			panic(err)
+		}
 
-	if _, err := bot.Send(msg); err != nil {
-		loger.ForLog(fmt.Sprintf("Error %s, sending message. User ID - %d.", err.Error(), user.ID))
+		if len(chats.Chats) == 0 {
+			chats.Chats = append(chats.Chats, Chat{Users: make([]User, 0), ID: UUID})
+
+			// We are adding a user to the last added suitableChats.
+			chats.Chats[len(chats.Chats)-1].Users = append(chats.Chats[len(chats.Chats)-1].Users, user)
+			continue
+		}
+
+		// Search for a suitableChats to which you can add a user.
+		suitableChats := chats.findAChatsForTheUser(user)
+		if suitableChats != nil {
+			// We add the user to the first suitable chat.
+			suitableChats[0].Users = append(suitableChats[0].Users, user)
+			continue
+		}
+
+		chats.Chats = append(chats.Chats, Chat{Users: make([]User, 0), ID: UUID})
+
+		// We are adding a user to the last added suitable chats.
+		chats.Chats[len(chats.Chats)-1].Users = append(chats.Chats[len(chats.Chats)-1].Users, user)
 	}
 }
 
-// StopChatting stops chatting.
-func (chats *Chats) StopChatting(userID int, bot *tgbotapi.BotAPI) {
-	if chats.IsTheUserInChat(userID) {
-		chat := chats.getChatByUserID(userID)
-		for _, user := range chat.Users {
-			_, err := bot.Send(tgbotapi.MessageConfig{
-				BaseChat: tgbotapi.BaseChat{
-					ChatID: int64(user.ID),
-				},
-				Text:      "*Chat ended.*",
-				ParseMode: "MARKDOWN"},
-			)
-
-			if err != nil {
-				loger.ForLog(fmt.Sprintf("Error %s, sending message. User ID - %d.", err.Error(), userID))
-			}
-		}
-
-		for i, c := range chats.Chats {
-			if chat.ID == c.ID {
-				chats.Chats[len(chats.Chats)-1], chats.Chats[i] = chats.Chats[i], chats.Chats[len(chats.Chats)-1] // Deleting chat
-				chats.Chats = chats.Chats[:len(chats.Chats)-1]
-				break
-			}
-		}
-	}
-}
-
-// SendMessageToInterlocutors sends messages to all interlocutors of the user.
-func (chats *Chats) SendMessageToInterlocutors(message string, userID int, bot *tgbotapi.BotAPI) {
-	users := chats.getUserInterlocutors(userID)
-
-	if users != nil {
-		for i, u := range *users {
-			_, err := bot.Send(tgbotapi.MessageConfig{
-				BaseChat: tgbotapi.BaseChat{
-					ChatID: int64(u.ID),
-				},
-				Text:      fmt.Sprintf("*Message from interlocutor %d:* %s", i+1, message),
-				ParseMode: "MARKDOWN"},
-			)
-
-			if err != nil {
-				loger.ForLog(fmt.Sprintf("Error %s, sending message. User ID - %d.", err.Error(), userID))
-			}
-		}
-	}
-}
-
-func (chats *Chats) getUserInterlocutors(userID int) *[]*User {
-	users := make([]*User, 0)
-	if chats.IsTheUserInChat(userID) {
-		chat := chats.getChatByUserID(userID)
-		for i := 0; i < len(chat.Users); i++ {
-			if chat.Users[i].ID != userID {
-				users = append(users, &chat.Users[i])
-			}
-		}
-
-		return &users
-	}
-
-	return nil
-}
-
-func (chats *Chats) getChatByUserID(userID int) *Chat {
+// findAChatForTheUser search for a chats(*[]*Chat) to which you can add a user.
+//
+// Takes into account the age, city and more.
+// If the chats is not found, returns nil.
+// Returns chats ([]*Chat) that are suitable for User.
+func (chats *Chats) findAChatsForTheUser(user User) []*Chat {
+	suitableChats := make([]*Chat, 0)
 	for i := 0; i < len(chats.Chats); i++ {
-		for j := 0; j < len(chats.Chats[i].Users); j++ {
-			if chats.Chats[i].Users[j].ID == userID {
-				return &chats.Chats[i]
-			}
+		// If the chat is crowded, it is not suitable.
+		if int64(len(chats.Chats[i].Users)) == int64(chats.UsersCount) {
+			continue
+		}
+
+		// If there are no users in the chat, then it is suitable.
+		if len(chats.Chats[i].Users) == 0 {
+			suitableChats = append(suitableChats, &chats.Chats[i])
+			continue
+		}
+
+		// If there is a user with the correct age and city, the chat is appropriate.
+		if chats.Chats[i].Users[0].Age == user.Age && chats.Chats[i].Users[0].City == user.City {
+			suitableChats = append(suitableChats, &chats.Chats[i])
 		}
 	}
 
-	return nil
+	if len(suitableChats) == 0 {
+		return nil
+	}
+
+	return suitableChats
 }
 
-// IsTheUserInChat return true if user is in chat.
-func (chats *Chats) IsTheUserInChat(userID int) bool {
+// AddUserToTheQueue adds a user to the queue(UsersQueue).
+func (chats *Chats) AddUserToTheQueue(user User) {
+	chats.UsersQueue <- user
+}
+
+// StopChatting stop chat with interlocutors.
+//
+// Find user in chat.
+// If user found delete chat with user.
+func (chats *Chats) StopChatting(userID int) {
+	userChat := chats.GetChatByUserID(userID)
+	if userChat == nil {
+		return
+	}
+
+	// We are looking for a chat that has a user, and delete it.
+	for i, chat := range chats.Chats {
+		if userChat.ID == chat.ID {
+			chats.Chats[len(chats.Chats)-1], chats.Chats[i] = chats.Chats[i], chats.Chats[len(chats.Chats)-1]
+			chats.Chats = chats.Chats[:len(chats.Chats)-1]
+
+			break
+		}
+	}
+}
+
+// GetChatByUserID return chat by user ID.
+//
+// Return nil if chat is not found.
+func (chats *Chats) GetChatByUserID(userID int) *Chat {
 	for _, chat := range chats.Chats {
 		for _, user := range chat.Users {
 			if user.ID == userID {
+				return &chat
+			}
+		}
+	}
+
+	return nil
+}
+
+// GetUserInterlocutors returns the user's interlocutors.
+//
+// Returns a nil when the user is not in the chat.
+func (chats *Chats) GetUserInterlocutors(userID int) []User {
+	chat := chats.GetChatByUserID(userID)
+	if chat != nil { // If the chat was not found.
+		interlocutors := make([]User, 0)
+		for _, user := range chat.Users {
+			if userID != user.ID {
+				interlocutors = append(interlocutors, user)
+			}
+		}
+
+		if len(interlocutors) == 0 {
+			return nil
+		}
+
+		return interlocutors
+	}
+
+	return nil
+}
+
+// UserIsChatting if the user is chatting, returns the true.
+func (chats *Chats) UserIsChatting(userID int) bool {
+	for _, c := range chats.Chats {
+		for _, u := range c.Users {
+			if u.ID == userID {
 				return true
 			}
 		}

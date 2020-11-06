@@ -13,5 +13,8 @@
   },
   "settings": {
     "command": "settings"
+  },
+  "unknown": {
+    "text": "Unknown message \"/help\"."
   }
 }
