@@ -32,7 +32,7 @@ type Commands struct {
 var commands Commands
 
 func init() {
-	b, err := ioutil.ReadFile("config/commands.json")
+	b, err := ioutil.ReadFile("configs/commands.json")
 	if err != nil {
 		logger.ForLog(fmt.Sprintf("Error %s. Failed to load \"commands.json\".", err.Error()))
 		panic(err)

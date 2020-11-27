@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  bot:
+    container_name: "stchb"
+    build: .
+    ports:
+      - "8443:8090"
+    links:
+      - redis
+
+  redis:
+    image: "redis:alpine"
+    container_name: "redis"

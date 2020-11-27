@@ -15,9 +15,9 @@ var DBRedis *RedisDB
 func init() {
 	DBRedis = &RedisDB{
 		client: redis.NewClient(&redis.Options{
-			Addr:     betypes.GetBotConfig().RedisConfig.Addr,
-			Password: betypes.GetBotConfig().RedisConfig.Password,
-			DB:       betypes.GetBotConfig().RedisConfig.DB,
+			Addr:     betypes.GetBotConfig().DB.Redis.Addr,
+			Password: betypes.GetBotConfig().DB.Redis.Password,
+			DB:       betypes.GetBotConfig().DB.Redis.Db,
 		}),
 	}
 	DBRedis.Ctx = DBRedis.client.Context()

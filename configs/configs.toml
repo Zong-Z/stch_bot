@@ -1,0 +1,14 @@
+[bot]
+web_hook = "{WEB_HOOK}"
+token = "{BOT_TOKEN}"
+port = "8090"
+
+[database]
+    [database.redis]
+    addr = "redis:6379"
+    password = ""
+    db = 0
+
+[chat]
+queue = 10
+users = 2

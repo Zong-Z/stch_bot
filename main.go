@@ -2,24 +2,25 @@ package main
 
 import (
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"log"
 	"net/http"
 	"telegram-chat_bot/betypes"
 	database "telegram-chat_bot/db"
 	"telegram-chat_bot/logger"
 	"telegram-chat_bot/src/commands"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 var (
-	newBot, botErr = tgbotapi.NewBotAPI(betypes.GetBotConfig().BotToken)
-	newChats       = betypes.NewChats(betypes.GetBotConfig().ChatsConfig.QueueSize,
-		betypes.GetBotConfig().ChatsConfig.UsersCount)
+	newBot, botErr = tgbotapi.NewBotAPI(betypes.GetBotConfig().Bot.Token)
+	newChats       = betypes.NewChats(betypes.GetBotConfig().Chat.Queue,
+		betypes.GetBotConfig().Chat.Users)
 )
 
 func main() {
 	go func() {
-		log.Fatalln(http.ListenAndServe(":"+betypes.GetBotConfig().BotPort, nil))
+		log.Fatalln(http.ListenAndServe(":"+betypes.GetBotConfig().Bot.Port, nil))
 	}()
 
 	logger.ForLog("Authorized on account.")
@@ -30,7 +31,8 @@ func main() {
 	logger.ForLog("Bot have created successfully.")
 
 	logger.ForLog("Setting up webhook.")
-	_, err := newBot.SetWebhook(tgbotapi.NewWebhook(betypes.GetBotConfig().WebHook))
+	_, err := newBot.SetWebhook(
+		tgbotapi.NewWebhook(betypes.GetBotConfig().Bot.WebHook))
 	if err != nil {
 		logger.ForLog(fmt.Sprintf("Error %s. Problem in setting Webhook.", err.Error()))
 		panic(err)
@@ -38,7 +40,7 @@ func main() {
 
 	// Check for updates.
 	for update := range newBot.ListenForWebhook("/") {
-		logger.ForLog(fmt.Sprintf("Upadte : %v", update))
+		logger.ForLog(fmt.Sprintf("Update : %v", update))
 		checkUpdate(update, newChats, newBot)
 	}
 }
@@ -65,7 +67,6 @@ func checkUpdate(update tgbotapi.Update, chats *betypes.Chats, bot *tgbotapi.Bot
 			// Sending a message.
 			for i, user := range interlocutors {
 				var msg tgbotapi.Chattable
-
 				if update.Message.Document != nil {
 					msg = tgbotapi.NewDocumentShare(int64(user.ID), update.Message.Document.FileID)
 				} else if update.Message.Photo != nil {

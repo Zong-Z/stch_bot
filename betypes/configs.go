@@ -1,40 +1,38 @@
 package betypes
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"telegram-chat_bot/logger"
+
+	"github.com/BurntSushi/toml"
 )
 
 // Config struct for saving bot settings.
 type Config struct {
-	WebHook     string `json:"web_hook"`
-	BotToken    string `json:"bot_token"`
-	BotPort     string `json:"bot_port"`
-	RedisConfig struct {
-		Addr     string `json:"addr"`
-		Password string `json:"password"`
-		DB       int    `json:"db"`
-	} `json:"redis_config"`
-	ChatsConfig struct {
-		QueueSize  uint `json:"queue_size"`
-		UsersCount uint `json:"users_count"`
-	} `json:"chats_config"`
+	Bot struct {
+		WebHook string `toml:"web_hook"`
+		Token   string `toml:"token"`
+		Port    string `toml:"port"`
+	} `toml:"bot"`
+	DB struct {
+		Redis struct {
+			Addr     string `toml:"addr"`
+			Password string `toml:"password"`
+			Db       int    `toml:"db"`
+		} `toml:"redis"`
+	} `toml:"database"`
+	Chat struct {
+		Queue int `toml:"queue"`
+		Users int `toml:"users"`
+	} `toml:"chat"`
 }
 
 var config Config
 
 func init() {
-	b, err := ioutil.ReadFile("config/config.json")
+	_, err := toml.DecodeFile("configs/configs.toml", &config)
 	if err != nil {
-		logger.ForLog(fmt.Sprintf("Error %s. Failed to load \"config.json\".", err.Error()))
-		panic(err)
-	}
-
-	err = json.Unmarshal(b, &config)
-	if err != nil {
-		logger.ForLog(fmt.Sprintf("Error %s. Incorrect \"config.json\".", err.Error()))
+		logger.ForLog(fmt.Sprintf("Error %s. Failed to load \"configs.toml\".", err.Error()))
 		panic(err)
 	}
 }

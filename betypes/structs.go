@@ -29,6 +29,6 @@ type UsersQueue chan User
 // Chats struct for saving all Chat with User queue.
 type Chats struct {
 	Chats      []Chat `json:"chat"`
-	UsersCount uint   `json:"users_count"` // UsersCount max users count in one chat.
+	UsersCount int    `json:"users_count"` // UsersCount max users count in one chat.
 	UsersQueue
 }
