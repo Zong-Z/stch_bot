@@ -10,7 +10,7 @@ import (
 // Config struct for saving bot settings.
 type Config struct {
 	Bot struct {
-		WebHook string `toml:"web_hook"`
+		Webhook string `toml:"webhook"`
 		Token   string `toml:"token"`
 		Port    string `toml:"port"`
 	} `toml:"bot"`
