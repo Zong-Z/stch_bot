@@ -1,5 +1,5 @@
 [bot]
-web_hook = "{WEB_HOOK}"
+webhook = "{WEBHOOK}" # If the field is empty(""), the bot is started using "Polling".
 token = "{BOT_TOKEN}"
 port = "8090"
 

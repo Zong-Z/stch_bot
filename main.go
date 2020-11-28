@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"telegram-chat_bot/betypes"
 	database "telegram-chat_bot/db"
 	"telegram-chat_bot/logger"
@@ -12,37 +13,64 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-var (
-	newBot, botErr = tgbotapi.NewBotAPI(betypes.GetBotConfig().Bot.Token)
-	newChats       = betypes.NewChats(betypes.GetBotConfig().Chat.Queue,
-		betypes.GetBotConfig().Chat.Users)
-)
-
 func main() {
 	go func() {
 		log.Fatalln(http.ListenAndServe(":"+betypes.GetBotConfig().Bot.Port, nil))
 	}()
 
+	bot, err := tgbotapi.NewBotAPI(betypes.GetBotConfig().Bot.Token)
+	chats := betypes.NewChats(betypes.GetBotConfig().Chat.Queue,
+		betypes.GetBotConfig().Chat.Users)
+
 	logger.ForLog("Authorized on account.")
-	if botErr != nil {
-		logger.ForLog(fmt.Sprintf("Error %s, creating bot.", botErr.Error()))
-		panic(botErr)
+	if err != nil {
+		logger.ForLog(fmt.Sprintf("Error %s, creating bot.", err.Error()))
+		panic(err)
 	}
 	logger.ForLog("Bot have created successfully.")
 
-	logger.ForLog("Setting up webhook.")
-	_, err := newBot.SetWebhook(
-		tgbotapi.NewWebhook(betypes.GetBotConfig().Bot.WebHook))
-	if err != nil {
-		logger.ForLog(fmt.Sprintf("Error %s. Problem in setting Webhook.", err.Error()))
-		panic(err)
+	var updates tgbotapi.UpdatesChannel
+	if !strings.EqualFold(betypes.GetBotConfig().Bot.Webhook, "") {
+		updates, err = setWebhook(bot)
+		if err != nil {
+			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+		}
 	}
 
-	// Check for updates.
-	for update := range newBot.ListenForWebhook("/") {
-		logger.ForLog(fmt.Sprintf("Update : %v", update))
-		checkUpdate(update, newChats, newBot)
+	if updates == nil {
+		updates, err = setPolling(bot)
+		if err != nil {
+			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+			panic(err)
+		}
 	}
+
+	for update := range updates {
+		logger.ForLog(fmt.Sprintf("Update : %v", update))
+		checkUpdate(update, chats, bot)
+	}
+}
+
+func setPolling(bot *tgbotapi.BotAPI) (tgbotapi.UpdatesChannel, error) {
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
+	updates, err := bot.GetUpdatesChan(u)
+	if err != nil {
+		return nil, err
+	}
+
+	return updates, nil
+}
+
+func setWebhook(bot *tgbotapi.BotAPI) (tgbotapi.UpdatesChannel, error) {
+	_, err := bot.SetWebhook(
+		tgbotapi.NewWebhook(betypes.GetBotConfig().Bot.Webhook))
+	if err != nil {
+		return nil, err
+	}
+	updates := bot.ListenForWebhook("/")
+
+	return updates, nil
 }
 
 func checkUpdate(update tgbotapi.Update, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
