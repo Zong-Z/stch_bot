@@ -10,6 +10,7 @@ import (
 	"telegram-chat_bot/logger"
 	"telegram-chat_bot/src/commands"
 
+	"github.com/go-redis/redis/v8"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -46,7 +47,8 @@ func main() {
 	}
 
 	for update := range updates {
-		logger.ForLog(fmt.Sprintf("Update : %v", update))
+		logger.ForLog(fmt.Sprintf("Update ID - %d.", update.UpdateID))
+
 		checkUpdate(update, chats, bot)
 	}
 }
@@ -85,8 +87,7 @@ func checkUpdate(update tgbotapi.Update, chats *betypes.Chats, bot *tgbotapi.Bot
 					Text:      "*YOU ARE NOT IN THE CHAT YET...*",
 					ParseMode: "MARKDOWN"})
 				if err != nil {
-					logger.ForLog(fmt.Sprintf("Error %s. Sending a message. User ID - %d.",
-						err.Error(), update.Message.From.ID))
+					logger.ForLog(fmt.Sprintf("Error %s. User ID - %d.", err.Error(), update.Message.From.ID))
 				}
 
 				return
@@ -102,16 +103,22 @@ func checkUpdate(update tgbotapi.Update, chats *betypes.Chats, bot *tgbotapi.Bot
 				} else if update.Message.Video != nil {
 					tgbotapi.NewVideoShare(int64(user.ID), update.Message.Video.FileID)
 				} else {
+					var msgText string
+					if betypes.GetBotConfig().Chat.Users > 2 /* If there are more than two interlocutors. */ {
+						msgText = fmt.Sprintf("*Interlocutor %d:* %s", i+1, update.Message.Text)
+					} else {
+						msgText = update.Message.Text
+					}
 					msg = tgbotapi.MessageConfig{
 						BaseChat:  tgbotapi.BaseChat{ChatID: int64(user.ID)},
-						Text:      fmt.Sprintf("*Interlocutor %d:* %s", i+1, update.Message.Text),
-						ParseMode: "MARKDOWN"}
+						Text:      msgText,
+						ParseMode: "MARKDOWN",
+					}
 				}
 
 				_, err := bot.Send(msg)
 				if err != nil {
-					logger.ForLog(fmt.Sprintf("Error %s. Sending a message. User ID - %d.",
-						err.Error(), update.Message.From.ID))
+					logger.ForLog(fmt.Sprintf("Error %s. User ID - %d.", err.Error(), update.Message.From.ID))
 				}
 			}
 
@@ -127,6 +134,10 @@ func checkUpdate(update tgbotapi.Update, chats *betypes.Chats, bot *tgbotapi.Bot
 
 	// Is the message a callback query.
 	if update.CallbackQuery != nil {
+		if strings.Contains(update.CallbackQuery.Data, commands.SettingsPrefixReplyMarkup) {
+			commands.AnswerOnCallbackQuerySettings(*update.CallbackQuery, bot)
+		}
+
 		return
 	}
 }
@@ -151,17 +162,13 @@ func checkCommands(message tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi
 			Text:      "*You are already in chat.*",
 			ParseMode: "MARKDOWN"}
 		if !chats.UserIsChatting(message.From.ID) {
-			u, err := database.DBRedis.GetUser(int64(message.From.ID))
-			if err != nil && err.Error() == "redis: nil" /* If no user is found */ {
-				logger.ForLog(fmt.Sprintf("User not found. User ID - %d.",
-					int64(message.From.ID)))
+			u, err := database.DB.GetUser(int64(message.From.ID))
+			if err != nil && err.Error() == redis.Nil.Error() /* If no user is found */ {
+				logger.ForLog(fmt.Sprintf("User not found. User ID - %d.", int64(message.From.ID)))
 
-				_, err := bot.Send(tgbotapi.NewMessage(
-					int64(message.From.ID), "You are not registered.\"/start\""))
+				_, err := bot.Send(tgbotapi.NewMessage(int64(message.From.ID), "You are not registered.\"/start\""))
 				if err != nil {
-					logger.ForLog(fmt.Sprintf(
-						"Error %s. Sending a message. User ID - %d.",
-						err.Error(), message.From.ID))
+					logger.ForLog(fmt.Sprintf("Error %s. User ID - %d.", err.Error(), message.From.ID))
 				}
 			}
 
@@ -177,8 +184,7 @@ func checkCommands(message tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi
 
 		_, err := bot.Send(msg)
 		if err != nil {
-			logger.ForLog(fmt.Sprintf("Error %s. Sending a message. User ID - %d.",
-				err.Error(), message.From.ID))
+			logger.ForLog(fmt.Sprintf("Error %s. User ID - %d.", err.Error(), message.From.ID))
 		}
 
 		chat := chats.GetChatByUserID(message.From.ID)
@@ -189,9 +195,7 @@ func checkCommands(message tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi
 					msg.ChatID = int64(user.ID)
 					_, err = bot.Send(msg)
 					if err != nil {
-						logger.ForLog(fmt.Sprintf(
-							"Error %s. Sending a message. User ID - %d.",
-							err.Error(), message.From.ID))
+						logger.ForLog(fmt.Sprintf("Error %s. User ID - %d.", err.Error(), message.From.ID))
 					}
 				}
 			}
@@ -210,21 +214,18 @@ func checkCommands(message tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi
 
 				_, err := bot.Send(msg)
 				if err != nil {
-					logger.ForLog(fmt.Sprintf(
-						"Error %s, sending message. User ID - %d.",
-						err.Error(), message.From.ID))
+					logger.ForLog(fmt.Sprintf("Error %s. User ID - %d.", err.Error(), message.From.ID))
 				}
 			}
 		}
 
-		logger.ForLog(fmt.Sprintf("User ID - %d. Chat not found.",
-			message.From.ID))
+		logger.ForLog(fmt.Sprintf("User ID - %d. Chat not found.", message.From.ID))
+	case betypes.GetBotCommands().Settings.Command:
+		commands.Settings(int64(message.From.ID), bot)
 	default:
-		_, err := bot.Send(tgbotapi.NewMessage(int64(message.From.ID),
-			betypes.GetBotCommands().Unknown.Text))
+		_, err := bot.Send(tgbotapi.NewMessage(int64(message.From.ID), betypes.GetBotCommands().Unknown.Text))
 		if err != nil {
-			logger.ForLog(fmt.Sprintf("Error %s, sending message. User ID - %d.",
-				err.Error(), message.From.ID))
+			logger.ForLog(fmt.Sprintf("Error %s. User ID - %d.", err.Error(), message.From.ID))
 		}
 	}
 }

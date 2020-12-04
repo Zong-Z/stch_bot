@@ -9,23 +9,23 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-// DBRedis redis database.
-var DBRedis *RedisDB
+// DB redis database.
+var DB *RedisDB
 
 func init() {
-	DBRedis = &RedisDB{
+	DB = &RedisDB{
 		client: redis.NewClient(&redis.Options{
 			Addr:     betypes.GetBotConfig().DB.Redis.Addr,
 			Password: betypes.GetBotConfig().DB.Redis.Password,
 			DB:       betypes.GetBotConfig().DB.Redis.Db,
 		}),
 	}
-	DBRedis.Ctx = DBRedis.client.Context()
+	DB.Ctx = DB.client.Context()
 }
 
 // SaveUser save the user in the database.
 func (db *RedisDB) SaveUser(user betypes.User) error {
-	logger.ForLog("Saving the user to the DBRedis, ID", user.ID)
+	logger.ForLog("Saving the user to the DB, ID", user.ID)
 	j, err := json.Marshal(user)
 	if err != nil {
 		logger.ForLog("Error, could not marshal user.", err)
@@ -34,24 +34,24 @@ func (db *RedisDB) SaveUser(user betypes.User) error {
 
 	err = db.client.Set(db.Ctx, userPrefix+strconv.FormatInt(int64(user.ID), 10), string(j), 0).Err()
 	if err != nil {
-		logger.ForLog("Error, could not save user to the DBRedis.", err)
+		logger.ForLog("Error, could not save user to the DB.", err)
 		return err
 	}
 
-	logger.ForLog("User have successfully saved to DBRedis, ID", user.ID)
+	logger.ForLog("User have successfully saved to DB, ID", user.ID)
 	return err
 }
 
 // GetUser return user form database.
 func (db *RedisDB) GetUser(userID int64) (*betypes.User, error) {
-	logger.ForLog("Getting a user from a DBRedis, ID", userID)
+	logger.ForLog("Getting a user from a DB, ID", userID)
 	u := &betypes.User{}
 	r, err := db.client.Get(db.Ctx, userPrefix+strconv.FormatInt(userID, 10)).Result()
 	if err == redis.Nil {
 		logger.ForLog("User not found.", err)
 		return nil, err
 	} else if err != nil {
-		logger.ForLog("Error, could not read user from DBRedis, ID", userID)
+		logger.ForLog("Error, could not read user from DB, ID", userID)
 		return nil, err
 	}
 
@@ -61,6 +61,6 @@ func (db *RedisDB) GetUser(userID int64) (*betypes.User, error) {
 		return nil, err
 	}
 
-	logger.ForLog("User successfully received from DBRedis.")
+	logger.ForLog("User successfully received from DB.")
 	return u, nil
 }
