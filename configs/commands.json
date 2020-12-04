@@ -1,7 +1,7 @@
 {
   "start": {
     "command": "start",
-    "text": "This is a simple telegram chat bot (STCHB), written in Go (Golang) for a fun using \"Go Telegram Bot API\". For help \"/help\""
+    "text": "This is a simple telegram chat bot (STCHB), written in Go (Golang) for a fun using \"Go Telegram Bot API\". For help \"/help\"."
   },
   "help": {
     "command": "help",

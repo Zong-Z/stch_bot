@@ -2,12 +2,9 @@ package betypes
 
 import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
-// Users const's.
 const (
 	// UserNil if the someone field in User struct is not set.
 	UserNil = "user: nil"
-	// UserAgeSixteenAndBelow = "user age: sixteen_and_below"
-	// UserAgeEighteenOrMore  = "user age: eighteen_or_more"
 )
 
 // User struct for saving user data.

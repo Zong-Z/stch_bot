@@ -1,5 +1,7 @@
 # STCHB - Simple chat-bot (Status - `in development`)
 
+[![CodeFactor](https://www.codefactor.io/repository/github/zong-z/stch_bot/badge)](https://www.codefactor.io/repository/github/zong-z/stch_bot)
+
 **STCHB** - is a simple Telegram chat-bot written in Go (Golang) for a fun, using "[Go Telegram Bot API](https://github.com/go-telegram-bot-api/telegram-bot-api)"
 
 ![Gopher image](https://golang.org/doc/gopher/fiveyears.jpg)
@@ -39,7 +41,7 @@ Go to [releases page](https://github.com/Zong-Z/stch_bot/releases) for details.
     
 ## TODO
 
-- - [ ] Opportunity to choose a city and age.
+- - [x] Opportunity to choose a city and age.
 - - [x] Ability to send photos, videos and documents to chat.
 
 ## Contributions
