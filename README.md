@@ -40,9 +40,9 @@ Go to [releases page](https://github.com/Zong-Z/stch_bot/releases) for details.
 
 ## TODO
 
--[x] Opportunity to choose a city and age.
+- [x] Opportunity to choose a city and age.
 
--[x] Ability to send photos, videos and documents to chat.
+- [x] Ability to send photos, videos and documents to chat.
 
 ## Contributions
 
