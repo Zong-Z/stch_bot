@@ -1,13 +1,14 @@
 package commands
 
 import (
+	"strings"
 	"telegram-chat_bot/betypes"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 const (
-	// SettingsPrefixReplyMarkup If callbackquery is a setting it has this prefix.
+	// SettingsPrefixReplyMarkup if callback query is a setting it has this prefix.
 	SettingsPrefixReplyMarkup = "SETTINGS_"
 	agePrefixReplyMarkup      = "AGE_"
 	cityPrefixReplyMarkup     = "CITY_"
@@ -65,4 +66,15 @@ var settingsReplyMarkups = replyMarkups{
 			),
 		}},
 	},
+}
+
+// Return nil if markup is not found.
+func (m *replyMarkups) findReplyMarkup(replyMarkupName string) *replyMarkup {
+	for _, markup := range *m {
+		if strings.EqualFold(markup.Name, replyMarkupName) {
+			return &markup
+		}
+	}
+
+	return nil
 }

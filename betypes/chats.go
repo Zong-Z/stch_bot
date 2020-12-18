@@ -10,7 +10,7 @@ import (
 
 // NewChats return new Chats.
 //
-// In goroutine starts a loop that adds users(User) to the chat([] Chat).
+// In goroutine starts a loop that adds users(User) to the chat([]Chat).
 // usersCount saves the maximum number of users in the chat.
 func NewChats(buffer, usersCount int) *Chats {
 	chats := &Chats{
@@ -28,7 +28,7 @@ func NewChats(buffer, usersCount int) *Chats {
 //
 // It is recommended to run in goroutine.
 // Gets User from UsersQueue and adds
-// new chats(To []Chat) to which User are added depending on age, city, etc.
+// new chats(To []Chat) to which User are added depending on age, city, etc...
 func (chats *Chats) startAddingUsers() {
 	for user := range chats.UsersQueue {
 		UUID := uuid.New().String()
@@ -65,7 +65,7 @@ func (chats *Chats) startAddingUsers() {
 //
 // Takes into account the age, city and more.
 // If the chats is not found, returns nil.
-// Returns chats ([]*Chat) that are suitable for User.
+// Returns chats([]*Chat) that are suitable for User.
 func (chats *Chats) findAChatsForTheUser(user User) []*Chat {
 	suitableChats := make([]*Chat, 0)
 	for i := 0; i < len(chats.Chats); i++ {

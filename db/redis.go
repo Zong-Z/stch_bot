@@ -9,8 +9,7 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-// DB redis database.
-var DB *RedisDB
+const userPrefix = "USER_"
 
 func init() {
 	DB = &RedisDB{

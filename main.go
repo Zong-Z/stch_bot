@@ -88,6 +88,7 @@ func checkUpdate(update tgbotapi.Update, chats *betypes.Chats, bot *tgbotapi.Bot
 					ParseMode: "MARKDOWN"})
 				if err != nil {
 					logger.ForLog(fmt.Sprintf("Error %s. User ID - %d.", err.Error(), update.Message.From.ID))
+					panic(err)
 				}
 
 				return
@@ -110,15 +111,14 @@ func checkUpdate(update tgbotapi.Update, chats *betypes.Chats, bot *tgbotapi.Bot
 						msgText = update.Message.Text
 					}
 					msg = tgbotapi.MessageConfig{
-						BaseChat:  tgbotapi.BaseChat{ChatID: int64(user.ID)},
-						Text:      msgText,
-						ParseMode: "MARKDOWN",
-					}
+						BaseChat: tgbotapi.BaseChat{ChatID: int64(user.ID)},
+						Text:     msgText, ParseMode: "MARKDOWN"}
 				}
 
 				_, err := bot.Send(msg)
 				if err != nil {
 					logger.ForLog(fmt.Sprintf("Error %s. User ID - %d.", err.Error(), update.Message.From.ID))
+					panic(err)
 				}
 			}
 
@@ -157,18 +157,16 @@ func checkCommands(message tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi
 	case betypes.GetBotCommands().Help.Command:
 		commands.Help(message.From.ID, bot)
 	case betypes.GetBotCommands().Chatting.Start:
-		msg := tgbotapi.MessageConfig{
-			BaseChat:  tgbotapi.BaseChat{ChatID: int64(message.From.ID)},
-			Text:      "*You are already in chat.*",
-			ParseMode: "MARKDOWN"}
+		msg := tgbotapi.MessageConfig{BaseChat: tgbotapi.BaseChat{ChatID: int64(message.From.ID)},
+			Text: "*YOU ARE ALREADY IN CHAT.*", ParseMode: "MARKDOWN"}
 		if !chats.UserIsChatting(message.From.ID) {
 			u, err := database.DB.GetUser(int64(message.From.ID))
 			if err != nil && err.Error() == redis.Nil.Error() /* If no user is found */ {
 				logger.ForLog(fmt.Sprintf("User not found. User ID - %d.", int64(message.From.ID)))
-
-				_, err := bot.Send(tgbotapi.NewMessage(int64(message.From.ID), "You are not registered.\"/start\""))
+				_, err := bot.Send(tgbotapi.NewMessage(int64(message.From.ID), "YOU ARE NOT REGISTERED.\"/start\""))
 				if err != nil {
-					logger.ForLog(fmt.Sprintf("Error %s. User ID - %d.", err.Error(), message.From.ID))
+					logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+					panic(err)
 				}
 			}
 
@@ -184,7 +182,8 @@ func checkCommands(message tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi
 
 		_, err := bot.Send(msg)
 		if err != nil {
-			logger.ForLog(fmt.Sprintf("Error %s. User ID - %d.", err.Error(), message.From.ID))
+			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+			panic(err)
 		}
 
 		chat := chats.GetChatByUserID(message.From.ID)
@@ -195,7 +194,8 @@ func checkCommands(message tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi
 					msg.ChatID = int64(user.ID)
 					_, err = bot.Send(msg)
 					if err != nil {
-						logger.ForLog(fmt.Sprintf("Error %s. User ID - %d.", err.Error(), message.From.ID))
+						logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+						panic(err)
 					}
 				}
 			}
@@ -207,25 +207,25 @@ func checkCommands(message tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi
 
 			for _, user := range chat.Users {
 				msg := tgbotapi.MessageConfig{
-					BaseChat:  tgbotapi.BaseChat{ChatID: int64(user.ID)},
-					Text:      "*CHAT ENDED*",
-					ParseMode: "MARKDOWN",
-				}
+					BaseChat: tgbotapi.BaseChat{ChatID: int64(user.ID)},
+					Text:     "*CHAT ENDED*", ParseMode: "MARKDOWN"}
 
 				_, err := bot.Send(msg)
 				if err != nil {
-					logger.ForLog(fmt.Sprintf("Error %s. User ID - %d.", err.Error(), message.From.ID))
+					logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+					panic(err)
 				}
 			}
 		}
 
-		logger.ForLog(fmt.Sprintf("User ID - %d. Chat not found.", message.From.ID))
+		logger.ForLog(fmt.Sprintf("User ID - %d. Chat did not found.", message.From.ID))
 	case betypes.GetBotCommands().Settings.Command:
 		commands.Settings(int64(message.From.ID), bot)
 	default:
 		_, err := bot.Send(tgbotapi.NewMessage(int64(message.From.ID), betypes.GetBotCommands().Unknown.Text))
 		if err != nil {
-			logger.ForLog(fmt.Sprintf("Error %s. User ID - %d.", err.Error(), message.From.ID))
+			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+			panic(err)
 		}
 	}
 }

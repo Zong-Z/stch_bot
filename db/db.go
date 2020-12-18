@@ -7,8 +7,6 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-const userPrefix = "USER_"
-
 type database interface {
 	SaveUser(user betypes.User) error
 	GetUser(userID int64) (*betypes.User, error)
@@ -20,3 +18,6 @@ type RedisDB struct {
 	client *redis.Client
 	Ctx    context.Context
 }
+
+// DB your database.
+var DB *RedisDB
