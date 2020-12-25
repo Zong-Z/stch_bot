@@ -6,11 +6,9 @@ import (
 	"net/http"
 	"strings"
 	"telegram-chat_bot/betypes"
-	database "telegram-chat_bot/db"
 	"telegram-chat_bot/logger"
-	"telegram-chat_bot/src/commands"
+	commands "telegram-chat_bot/src"
 
-	"github.com/go-redis/redis/v8"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -20,8 +18,7 @@ func main() {
 	}()
 
 	bot, err := tgbotapi.NewBotAPI(betypes.GetBotConfig().Bot.Token)
-	chats := betypes.NewChats(betypes.GetBotConfig().Chat.Queue,
-		betypes.GetBotConfig().Chat.Users)
+	chats := betypes.NewChats(betypes.GetBotConfig().Chat.Queue, betypes.GetBotConfig().Chat.Users)
 
 	logger.ForLog("Authorized on account.")
 	if err != nil {
@@ -84,8 +81,9 @@ func checkUpdate(update tgbotapi.Update, chats *betypes.Chats, bot *tgbotapi.Bot
 			if interlocutors == nil {
 				_, err := bot.Send(tgbotapi.MessageConfig{
 					BaseChat:  tgbotapi.BaseChat{ChatID: int64(update.Message.From.ID)},
-					Text:      "*YOU ARE NOT IN THE CHAT YET...*",
-					ParseMode: "MARKDOWN"})
+					Text:      betypes.GetTexts().Chat.NotInChat,
+					ParseMode: betypes.GetTexts().ParseMode,
+				})
 				if err != nil {
 					logger.ForLog(fmt.Sprintf("Error %s. User ID - %d.", err.Error(), update.Message.From.ID))
 					panic(err)
@@ -106,13 +104,13 @@ func checkUpdate(update tgbotapi.Update, chats *betypes.Chats, bot *tgbotapi.Bot
 				} else {
 					var msgText string
 					if betypes.GetBotConfig().Chat.Users > 2 /* If there are more than two interlocutors. */ {
-						msgText = fmt.Sprintf("*Interlocutor %d:* %s", i+1, update.Message.Text)
+						msgText = fmt.Sprintf("*INTERLOCUTOR %d:* %s", i+1, update.Message.Text)
 					} else {
 						msgText = update.Message.Text
 					}
 					msg = tgbotapi.MessageConfig{
 						BaseChat: tgbotapi.BaseChat{ChatID: int64(user.ID)},
-						Text:     msgText, ParseMode: "MARKDOWN"}
+						Text:     msgText, ParseMode: betypes.GetTexts().ParseMode}
 				}
 
 				_, err := bot.Send(msg)
@@ -144,7 +142,7 @@ func checkUpdate(update tgbotapi.Update, chats *betypes.Chats, bot *tgbotapi.Bot
 
 func checkCommands(message tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
 	switch message.Command() {
-	case betypes.GetBotCommands().Start.Command:
+	case betypes.GetTexts().Commands.Start.Command:
 		user := betypes.User{User: tgbotapi.User{
 			ID:           message.From.ID,
 			FirstName:    message.From.FirstName,
@@ -154,75 +152,22 @@ func checkCommands(message tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi
 			IsBot:        message.From.IsBot,
 		}, Age: betypes.UserNil, City: betypes.UserNil}
 		commands.Start(user, bot)
-	case betypes.GetBotCommands().Help.Command:
+	case betypes.GetTexts().Commands.Help.Command:
 		commands.Help(message.From.ID, bot)
-	case betypes.GetBotCommands().Chatting.Start:
-		msg := tgbotapi.MessageConfig{BaseChat: tgbotapi.BaseChat{ChatID: int64(message.From.ID)},
-			Text: "*YOU ARE ALREADY IN CHAT.*", ParseMode: "MARKDOWN"}
-		if !chats.UserIsChatting(message.From.ID) {
-			u, err := database.DB.GetUser(int64(message.From.ID))
-			if err != nil && err.Error() == redis.Nil.Error() /* If no user is found */ {
-				logger.ForLog(fmt.Sprintf("User not found. User ID - %d.", int64(message.From.ID)))
-				_, err := bot.Send(tgbotapi.NewMessage(int64(message.From.ID), "YOU ARE NOT REGISTERED.\"/start\""))
-				if err != nil {
-					logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-					panic(err)
-				}
-			}
-
-			if err != nil {
-				logger.ForLog(fmt.Sprintf("Error, %s.", err.Error()))
-				panic(err)
-			}
-
-			chats.AddUserToTheQueue(*u)
-
-			msg.Text = "*The search for the interlocutor has begun....*"
+	case betypes.GetTexts().Commands.Chatting.Start:
+		commands.StartChat(message, chats, bot)
+	case betypes.GetTexts().Commands.Chatting.Stop:
+		commands.StopChat(message, chats, bot)
+	case betypes.GetTexts().Commands.Settings.Command:
+		commands.Settings(int64(message.From.ID), bot)
+	default:
+		msg := tgbotapi.MessageConfig{
+			BaseChat:  tgbotapi.BaseChat{ChatID: int64(message.From.ID)},
+			Text:      betypes.GetTexts().Commands.Unknown.Text,
+			ParseMode: betypes.GetTexts().ParseMode,
 		}
 
 		_, err := bot.Send(msg)
-		if err != nil {
-			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-			panic(err)
-		}
-
-		chat := chats.GetChatByUserID(message.From.ID)
-		if chat != nil {
-			if int64(len(chat.Users)) == int64(chats.UsersCount) {
-				msg = tgbotapi.MessageConfig{Text: "*CHAT FOUND*", ParseMode: "MARKDOWN"}
-				for _, user := range chat.Users {
-					msg.ChatID = int64(user.ID)
-					_, err = bot.Send(msg)
-					if err != nil {
-						logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-						panic(err)
-					}
-				}
-			}
-		}
-	case betypes.GetBotCommands().Chatting.Stop:
-		chat := chats.GetChatByUserID(message.From.ID)
-		if chat != nil {
-			chats.StopChatting(message.From.ID)
-
-			for _, user := range chat.Users {
-				msg := tgbotapi.MessageConfig{
-					BaseChat: tgbotapi.BaseChat{ChatID: int64(user.ID)},
-					Text:     "*CHAT ENDED*", ParseMode: "MARKDOWN"}
-
-				_, err := bot.Send(msg)
-				if err != nil {
-					logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-					panic(err)
-				}
-			}
-		}
-
-		logger.ForLog(fmt.Sprintf("User ID - %d. Chat did not found.", message.From.ID))
-	case betypes.GetBotCommands().Settings.Command:
-		commands.Settings(int64(message.From.ID), bot)
-	default:
-		_, err := bot.Send(tgbotapi.NewMessage(int64(message.From.ID), betypes.GetBotCommands().Unknown.Text))
 		if err != nil {
 			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
 			panic(err)

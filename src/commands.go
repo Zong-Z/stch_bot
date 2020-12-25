@@ -13,7 +13,7 @@ import (
 
 // Help sends help text to user.
 func Help(chatID int, bot *tgbotapi.BotAPI) {
-	_, err := bot.Send(tgbotapi.NewMessage(int64(chatID), betypes.GetBotCommands().Help.Text))
+	_, err := bot.Send(tgbotapi.NewMessage(int64(chatID), betypes.GetTexts().Commands.Help.Text))
 	if err != nil {
 		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
 		panic(err)
@@ -24,7 +24,7 @@ func Help(chatID int, bot *tgbotapi.BotAPI) {
 func Start(user betypes.User, bot *tgbotapi.BotAPI) {
 	// Saving user.
 	_, err := database.DB.GetUser(int64(user.ID))
-	if err != nil && err.Error() == redis.Nil.Error() /* If no user is found */ {
+	if err != nil && err.Error() == redis.Nil.Error() {
 		err := database.DB.SaveUser(user)
 		if err != nil {
 			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
@@ -33,11 +33,89 @@ func Start(user betypes.User, bot *tgbotapi.BotAPI) {
 	}
 
 	// Sending to user start text.
-	_, err = bot.Send(tgbotapi.NewMessage(int64(user.ID), betypes.GetBotCommands().Start.Text))
+	_, err = bot.Send(tgbotapi.NewMessage(int64(user.ID), betypes.GetTexts().Commands.Start.Text))
 	if err != nil {
 		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
 		panic(err)
 	}
+}
+
+// StartChat add user to chat queue.
+func StartChat(message tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
+	msg := tgbotapi.MessageConfig{
+		BaseChat: tgbotapi.BaseChat{ChatID: int64(message.From.ID)},
+		Text:     betypes.GetTexts().Chat.AlreadyInChat, ParseMode: betypes.GetTexts().ParseMode,
+	}
+
+	if !chats.UserIsChatting(message.From.ID) {
+		u, err := database.DB.GetUser(int64(message.From.ID))
+		if err != nil && err.Error() == redis.Nil.Error() {
+			logger.ForLog(fmt.Sprintf("User not found. User ID - %d.", int64(message.From.ID)))
+
+			msg.Text = betypes.GetTexts().Chat.NotRegistered
+			_, err := bot.Send(msg)
+			if err != nil {
+				logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+				panic(err)
+			}
+		}
+
+		if err != nil {
+			logger.ForLog(fmt.Sprintf("Error, %s.", err.Error()))
+			panic(err)
+		}
+
+		chats.AddUserToTheQueue(*u)
+
+		msg.Text = betypes.GetTexts().Chat.InterlocutorSearchStarted
+	}
+
+	_, err := bot.Send(msg)
+	if err != nil {
+		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+		panic(err)
+	}
+
+	chat := chats.GetChatByUserID(message.From.ID)
+	if chat != nil {
+		if int64(len(chat.Users)) == int64(chats.UsersCount) {
+			msg = tgbotapi.MessageConfig{
+				Text:      betypes.GetTexts().Chat.ChatFound,
+				ParseMode: betypes.GetTexts().ParseMode,
+			}
+			for _, user := range chat.Users {
+				msg.ChatID = int64(user.ID)
+				_, err = bot.Send(msg)
+				if err != nil {
+					logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+					panic(err)
+				}
+			}
+		}
+	}
+}
+
+// StopChat ends the chat.
+func StopChat(message tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
+	chat := chats.GetChatByUserID(message.From.ID)
+	if chat != nil {
+		chats.StopChatting(message.From.ID)
+
+		for _, user := range chat.Users {
+			msg := tgbotapi.MessageConfig{
+				BaseChat: tgbotapi.BaseChat{ChatID: int64(user.ID)},
+				Text:     betypes.GetTexts().Chat.ChatEnded, ParseMode: betypes.GetTexts().ParseMode,
+			}
+
+			_, err := bot.Send(msg)
+			if err != nil {
+				logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+				panic(err)
+			}
+		}
+	}
+
+	logger.ForLog(fmt.Sprintf("User ID - %d. Chat did not found.", message.From.ID))
 }
 
 // Settings sends to the user settings keyboard.
@@ -49,7 +127,10 @@ func Settings(chatID int64, bot *tgbotapi.BotAPI) {
 
 	_, err := bot.Send(tgbotapi.MessageConfig{
 		BaseChat: tgbotapi.BaseChat{ChatID: chatID, ReplyMarkup: markup.InlineKeyboardMarkup},
-		Text:     fmt.Sprintf("*%s*", markup.Name), ParseMode: "MARKDOWN"})
+		Text: fmt.Sprintf("*%s*",
+			strings.Replace(markup.Name, SettingsPrefixReplyMarkup, "", 1)),
+		ParseMode: betypes.GetTexts().ParseMode,
+	})
 	if err != nil {
 		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
 		panic(err)
@@ -137,7 +218,8 @@ func changeUserAgeOrCity(callbackQuery tgbotapi.CallbackQuery, bot *tgbotapi.Bot
 	if err != nil && err.Error() == redis.Nil.Error() {
 		_, err := bot.Send(tgbotapi.MessageConfig{
 			BaseChat: tgbotapi.BaseChat{ChatID: int64(callbackQuery.From.ID)},
-			Text:     "*YOU ARE NOT REGISTERED* \"/start\"", ParseMode: "MARKDOWN"})
+			Text:     betypes.GetTexts().Chat.NotRegistered, ParseMode: betypes.GetTexts().ParseMode,
+		})
 		if err != nil {
 			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
 			panic(err)

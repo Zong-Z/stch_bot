@@ -1,0 +1,36 @@
+{
+  "commands": {
+    "start": {
+      "command": "start",
+      "text": "This is a simple telegram chat bot (STCHB), written in Go (Golang) for a fun using \"Go Telegram Bot API\". For help \"/help\"."
+    },
+    "help": {
+      "command": "help",
+      "text": "This is a simple telegram chat bot (STCHB), written in Go (Golang) for a fun using \"Go Telegram Bot API\".\nYou can setting up your age and interlocutor age \"/settings\".\n\"/start_chatting\" to start a conversation with a random person.\n\"/stop_chatting\" to stop a conversation."
+    },
+    "chatting": {
+      "start": "start_chatting",
+      "stop": "stop_chatting"
+    },
+    "settings": {
+      "command": "settings"
+    },
+    "unknown": {
+      "text": "Unknown message \"/help\"."
+    }
+  },
+  "parse_mode": "MARKDOWN",
+  "chat": {
+    "not_registered": "*\uD83D\uDED1YOU ARE NOT REGISTERED. USE* \"/start\".",
+    "interlocutor_search_begun": "*\uD83D\uDD35THE SEARCH FOR THE INTERLOCUTOR HAS BEGUN...*",
+    "chat_found": "*\uD83D\uDFE2CHAT FOUND*",
+    "already_in_chat": "*\uD83D\uDED1YOU ARE ALREADY IN CHAT.*",
+    "not_in_chat": "*\uD83D\uDD34YOU ARE NOT IN THE CHAT YET...*",
+    "chat_ended": "*\uD83D\uDD34CHAT ENDED*"
+  },
+  "reply_keyboard_markup": {
+    "opened": "OPENED",
+    "changed": "CHANGED",
+    "closed": "CLOSED"
+  }
+}
