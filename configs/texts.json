@@ -16,17 +16,17 @@
       "command": "settings"
     },
     "unknown": {
-      "text": "Unknown message \"/help\"."
+      "text": "<strong>UNKNOWN MESSAGE<strong> \"/help\"."
     }
   },
-  "parse_mode": "MARKDOWN",
+  "parse_mode": "HTML",
   "chat": {
-    "not_registered": "*\uD83D\uDED1YOU ARE NOT REGISTERED. USE* \"/start\".",
-    "interlocutor_search_begun": "*\uD83D\uDD35THE SEARCH FOR THE INTERLOCUTOR HAS BEGUN...*",
-    "chat_found": "*\uD83D\uDFE2CHAT FOUND*",
-    "already_in_chat": "*\uD83D\uDED1YOU ARE ALREADY IN CHAT.*",
-    "not_in_chat": "*\uD83D\uDD34YOU ARE NOT IN THE CHAT YET...*",
-    "chat_ended": "*\uD83D\uDD34CHAT ENDED*"
+    "not_registered": "<strong>\uD83D\uDED1YOU ARE NOT REGISTERED. USE</strong> \"/start\".",
+    "interlocutor_search_begun": "<strong>\uD83D\uDD35THE SEARCH FOR THE INTERLOCUTOR HAS BEGUN...</strong>",
+    "chat_found": "<strong>\uD83D\uDFE2CHAT FOUND</strong>",
+    "already_in_chat": "<strong>\uD83D\uDED1YOU ARE ALREADY IN CHAT.</strong>",
+    "not_in_chat": "<strong>\uD83D\uDD34YOU ARE NOT IN THE CHAT YET...</strong>",
+    "chat_ended": "<strong>\uD83D\uDD34CHAT ENDED</strong>"
   },
   "reply_keyboard_markup": {
     "opened": "OPENED",

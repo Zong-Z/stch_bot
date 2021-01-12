@@ -14,9 +14,9 @@ const userPrefix = "USER_"
 func init() {
 	DB = &RedisDB{
 		client: redis.NewClient(&redis.Options{
-			Addr:     betypes.GetBotConfig().DB.Redis.Addr,
-			Password: betypes.GetBotConfig().DB.Redis.Password,
-			DB:       betypes.GetBotConfig().DB.Redis.Db,
+			Addr:     betypes.GetConfig().DB.Redis.Addr,
+			Password: betypes.GetConfig().DB.Redis.Password,
+			DB:       betypes.GetConfig().DB.Redis.Db,
 		}),
 	}
 	DB.Ctx = DB.client.Context()
@@ -42,10 +42,10 @@ func (db *RedisDB) SaveUser(user betypes.User) error {
 }
 
 // GetUser return user form database.
-func (db *RedisDB) GetUser(userID int64) (*betypes.User, error) {
+func (db *RedisDB) GetUser(userID int) (*betypes.User, error) {
 	logger.ForLog("Getting a user from a DB, ID", userID)
 	u := &betypes.User{}
-	r, err := db.client.Get(db.Ctx, userPrefix+strconv.FormatInt(userID, 10)).Result()
+	r, err := db.client.Get(db.Ctx, userPrefix+strconv.FormatInt(int64(userID), 10)).Result()
 	if err == redis.Nil {
 		logger.ForLog("User not found.", err)
 		return nil, err

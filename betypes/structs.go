@@ -10,8 +10,10 @@ const (
 // User struct for saving user data.
 type User struct {
 	tgbotapi.User
-	Age  string `json:"age"`
-	City string `json:"city"`
+	Age              string `json:"age"`
+	City             string `json:"city"`
+	InterlocutorAge  string `json:"interlocutor_age"`
+	InterlocutorCity string `json:"interlocutor_city"`
 }
 
 // Chat struct for saving users([]User) in chat.
@@ -20,12 +22,12 @@ type Chat struct {
 	ID    string `json:"id"`
 }
 
-// UsersQueue users queue.
-type UsersQueue chan User
+// Queue users queue.
+type Queue chan User
 
 // Chats struct for saving all Chat with User queue.
 type Chats struct {
 	Chats      []Chat `json:"chat"`
 	UsersCount int    `json:"users_count"` // UsersCount max users count in one chat.
-	UsersQueue
+	Queue
 }

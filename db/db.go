@@ -9,7 +9,7 @@ import (
 
 type database interface {
 	SaveUser(user betypes.User) error
-	GetUser(userID int64) (*betypes.User, error)
+	GetUser(userID int) (*betypes.User, error)
 }
 
 // RedisDB saves redis database settings.

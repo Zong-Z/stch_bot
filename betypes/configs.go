@@ -13,6 +13,11 @@ type Config struct {
 		Webhook string `toml:"webhook"`
 		Token   string `toml:"token"`
 		Port    string `toml:"port"`
+		Polling struct {
+			Offset  int `toml:"offset"`
+			Limit   int `toml:"limit"`
+			Timeout int `toml:"timeout"`
+		} `toml:"polling"`
 	} `toml:"bot"`
 	DB struct {
 		Redis struct {
@@ -37,7 +42,7 @@ func init() {
 	}
 }
 
-// GetBotConfig return bot config.
-func GetBotConfig() Config {
+// GetConfig return bot config.
+func GetConfig() Config {
 	return config
 }
