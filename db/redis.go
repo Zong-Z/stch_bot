@@ -44,7 +44,6 @@ func (db *RedisDB) SaveUser(user betypes.User) error {
 // GetUser return user form database.
 func (db *RedisDB) GetUser(userID int) (*betypes.User, error) {
 	logger.ForLog("Getting a user from a DB, ID", userID)
-	u := &betypes.User{}
 	r, err := db.client.Get(db.Ctx, userPrefix+strconv.FormatInt(int64(userID), 10)).Result()
 	if err == redis.Nil {
 		logger.ForLog("User not found.", err)
@@ -54,6 +53,7 @@ func (db *RedisDB) GetUser(userID int) (*betypes.User, error) {
 		return nil, err
 	}
 
+	u := &betypes.User{}
 	err = json.Unmarshal([]byte(r), &u)
 	if err != nil {
 		logger.ForLog("Error, could not unmarshal user.")

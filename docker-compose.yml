@@ -6,6 +6,8 @@ services:
     restart: always
     build: .
     ports:
+      # If you wont to change this bot port, you also need change "configs/configs.toml" bot port.
+      # The external port can only be 443, 80, 88, 8443. Otherwise, the webhook will not work.
       - "8443:8090"
     links:
       - redis

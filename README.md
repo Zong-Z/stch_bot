@@ -13,10 +13,11 @@ Go to [releases page](https://github.com/Zong-Z/stch_bot/releases) for details.
 
 ### Run
 
-1) You need to install [Docker](https://docs.docker.com/get-docker) and [Docker Compose](https://docs.docker.com/compose/install).
-2) `cd <folder with the project>/stch_bot`.
-3) Setting up configs [`configs.toml`](https://github.com/Zong-Z/stch_bot/blob/master/configs/configs.toml).
-4) `docker-compose up -d --build --remove-orphans`.
+1) You need to install [Docker](https://docs.docker.com/get-docker) and [Docker Compose](https://docs.docker.com/compose/install)
+2) Open Terminal
+3) `cd <folder with the project>/stch_bot`
+4) Setting up configs [`configs.toml`](https://github.com/Zong-Z/stch_bot/blob/master/configs/configs.toml)
+5) `docker-compose up -d --build --remove-orphans`
 
 ### Development
 
@@ -35,8 +36,8 @@ Go to [releases page](https://github.com/Zong-Z/stch_bot/releases) for details.
   - `go get github.com/go-redis/redis/v8`
 - [Go package for UUIDs](https://github.com/google/uuid)
   - `go get github.com/google/uuid`
-- [TOML parser and encoder for Go with reflection](https://github.com/BurntSushi/toml)
-  - `go get github.com/BurntSushi/toml`
+- [Go library for the TOML format](https://github.com/pelletier/go-toml)
+  - `go get github.com/pelletier/go-toml`
 
 ## TODO
 

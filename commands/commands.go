@@ -188,17 +188,18 @@ func StopChatting(userID int, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
 
 // Settings sends to user settings reply markup.
 func Settings(userID int, bot *tgbotapi.BotAPI) {
-	settingsReplyMarkup := markups.GetSettings().FindReplyMarkup(markups.SettingsPrefix + markups.SettingsReplyMarkupName)
-	if settingsReplyMarkup == nil {
+	settingsInlineKeyboardMarkup := markups.GetSettings().FindInlineKeyboardMarkup(
+		markups.SettingsPrefix + markups.SettingsReplyMarkupName)
+	if settingsInlineKeyboardMarkup == nil {
 		return
 	}
 
 	msg := tgbotapi.MessageConfig{
 		BaseChat: tgbotapi.BaseChat{
 			ChatID:      int64(userID),
-			ReplyMarkup: (*settingsReplyMarkup).InlineKeyboardMarkup,
+			ReplyMarkup: settingsInlineKeyboardMarkup,
 		},
-		Text:      strings.Replace(settingsReplyMarkup.Name, markups.SettingsPrefix, "", 1),
+		Text:      strings.Replace(markups.SettingsReplyMarkupName, markups.SettingsPrefix, "", 1),
 		ParseMode: betypes.GetTexts().ParseMode,
 	}
 

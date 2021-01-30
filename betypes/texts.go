@@ -50,14 +50,12 @@ var text Text
 func init() {
 	b, err := ioutil.ReadFile("configs/texts.json")
 	if err != nil {
-		logger.ForLog(fmt.Sprintf("Error %s. Failed to load \"texts.json\".", err.Error()))
-		panic(err)
+		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
 	}
 
 	err = json.Unmarshal(b, &text)
 	if err != nil {
-		logger.ForLog(fmt.Sprintf("Error %s. Incorrect \"texts.json\".", err.Error()))
-		panic(err)
+		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
 	}
 }
 

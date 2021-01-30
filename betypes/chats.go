@@ -53,25 +53,10 @@ func (c *Chats) FindSuitableChatsForUser(user User) []*Chat {
 			continue
 		}
 
-		/*
-			(((u.InterlocutorAge == UserNil) && (user.InterlocutorAge == u.Age)) || ((u.InterlocutorAge == user.Age) && (user.InterlocutorAge == UserNil))) ||
-			(((u.InterlocutorCity == UserNil) && (user.InterlocutorCity == u.City)) || ((u.InterlocutorCity == user.City) && (user.InterlocutorCity == UserNil))) ||
-			(((u.InterlocutorAge == user.Age) && (u.Age == user.InterlocutorAge)) && ((u.InterlocutorCity == user.City) && (user.InterlocutorCity == UserNil)) || ((u.InterlocutorCity == UserNil) && (user.InterlocutorCity == u.City))) ||
-			(((u.InterlocutorAge == UserNil) && (user.InterlocutorAge == u.Age) || (u.InterlocutorAge == user.Age && user.InterlocutorAge == UserNil)) && ((u.InterlocutorCity == user.City) && (u.City == user.InterlocutorCity)))
-		*/
-		u := c.Chats[i].Users[0]
-		if usersCount == 0 || (u.InterlocutorAge == UserNil) && (user.InterlocutorAge == u.Age) ||
-			(u.InterlocutorAge == user.Age) && (user.InterlocutorAge == UserNil) || (u.InterlocutorCity == user.City) &&
-			(user.InterlocutorCity == UserNil) || ((u.InterlocutorAge == user.Age) &&
-			(u.Age == user.InterlocutorAge)) && ((u.InterlocutorCity == user.City) &&
-			(user.InterlocutorCity == UserNil)) || (u.InterlocutorCity == UserNil) &&
-			(user.InterlocutorCity == u.City) || ((u.InterlocutorAge == UserNil) && (user.InterlocutorAge == u.Age) ||
-			(u.InterlocutorAge == user.Age && user.InterlocutorAge == UserNil)) &&
-			((u.InterlocutorCity == user.City) && (u.City == user.InterlocutorCity)) {
+		userFormChat := c.Chats[i].Users[len(c.Chats[i].Users)-1]
+		if user.IsSuitableAge(userFormChat) && user.IsSuitableCity(userFormChat) {
 			chats = append(chats, &c.Chats[i])
-			continue
 		}
-
 	}
 
 	if len(chats) != 0 {

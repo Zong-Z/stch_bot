@@ -1,7 +1,7 @@
 [bot]
 webhook = "{WEBHOOK}" # If the field is empty("") or webhook is invalid, the bot starts using "Polling".
-token = "{TOKEN}"
-port = "8090"
+token = "{TOKEN}" # Telegram bot token.
+port = "8090" # If you wont to change this bot port, you also need change bot port in "docker-compose.yml".
     [bot.polling]
     offset = 0
     limit = 0

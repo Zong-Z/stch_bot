@@ -2,9 +2,10 @@ package betypes
 
 import (
 	"fmt"
+	"io/ioutil"
 	"telegram-chat_bot/logger"
 
-	"github.com/BurntSushi/toml"
+	"github.com/pelletier/go-toml"
 )
 
 // Config struct for saving bot settings.
@@ -35,10 +36,14 @@ type Config struct {
 var config Config
 
 func init() {
-	_, err := toml.DecodeFile("configs/configs.toml", &config)
+	b, err := ioutil.ReadFile("configs/configs.toml")
 	if err != nil {
-		logger.ForLog(fmt.Sprintf("Error %s. Failed to load \"configs.toml\".", err.Error()))
-		panic(err)
+		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+	}
+
+	err = toml.Unmarshal(b, &config)
+	if err != nil {
+		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
 	}
 }
 
