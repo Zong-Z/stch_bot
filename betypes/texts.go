@@ -25,6 +25,9 @@ type Text struct {
 		Settings struct {
 			Command string `json:"command"`
 		} `json:"settings"`
+		Me struct {
+			Command string `json:"command"`
+		} `json:"me"`
 		Unknown struct {
 			Text string `json:"text"`
 		} `json:"unknown"`

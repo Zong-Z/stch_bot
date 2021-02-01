@@ -66,16 +66,16 @@ func StartChatting(userID int, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
 
 	if !chats.IsUserInChat(userID) {
 		user, err := database.DB.GetUser(userID)
-		if err != nil && err.Error() == redis.Nil.Error() {
+		if err != nil && err.Error() == redis.Nil.Error() || user == nil {
 			msg.Text = betypes.GetTexts().Chat.NotRegistered
 			_, err := bot.Send(msg)
 			if err != nil {
 				logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
 				panic(err)
 			}
-		}
 
-		if err != nil {
+			return
+		} else if err != nil {
 			logger.ForLog(fmt.Sprintf("Error, %s.", err.Error()))
 			panic(err)
 		}
@@ -195,15 +195,53 @@ func Settings(userID int, bot *tgbotapi.BotAPI) {
 	}
 
 	msg := tgbotapi.MessageConfig{
-		BaseChat: tgbotapi.BaseChat{
-			ChatID:      int64(userID),
-			ReplyMarkup: settingsInlineKeyboardMarkup,
-		},
-		Text:      strings.Replace(markups.SettingsReplyMarkupName, markups.SettingsPrefix, "", 1),
+		BaseChat:  tgbotapi.BaseChat{ChatID: int64(userID), ReplyMarkup: settingsInlineKeyboardMarkup},
+		Text:      "⚙" + strings.Replace(markups.SettingsReplyMarkupName, markups.SettingsPrefix, "", 1),
 		ParseMode: betypes.GetTexts().ParseMode,
 	}
 
 	_, err := bot.Send(msg)
+	if err != nil {
+		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+		panic(err)
+	}
+}
+
+func Me(userID int, bot *tgbotapi.BotAPI) {
+	user, err := database.DB.GetUser(userID)
+	if err != nil && err.Error() == redis.Nil.Error() || user == nil {
+		msg := tgbotapi.MessageConfig{
+			BaseChat:  tgbotapi.BaseChat{ChatID: int64(userID)},
+			Text:      betypes.GetTexts().Chat.NotRegistered,
+			ParseMode: betypes.GetTexts().ParseMode,
+		}
+
+		_, err := bot.Send(msg)
+		if err != nil {
+			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+			panic(err)
+		}
+
+		return
+	} else if err != nil && err.Error() != redis.Nil.Error() {
+		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+		panic(err)
+	}
+
+	msg := tgbotapi.MessageConfig{
+		BaseChat: tgbotapi.BaseChat{ChatID: int64(userID)},
+		Text: fmt.Sprintf(
+			"📝*Information about you.*\n"+
+				"📅*Your age:* %s.\n"+
+				"📅*Interlocutor age:* %s.\n"+
+				"🌍*Your city:* %s.\n"+
+				"🌍*Interlocutor city:* %s.\n",
+			user.Age, user.InterlocutorAge, user.City, user.InterlocutorCity,
+		),
+		ParseMode: "MARKDOWN",
+	}
+
+	_, err = bot.Send(msg)
 	if err != nil {
 		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
 		panic(err)

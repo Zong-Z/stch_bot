@@ -2,11 +2,11 @@
   "commands": {
     "start": {
       "command": "start",
-      "text": "This is a simple telegram chat bot (STCHB), written in Go (Golang) for a fun using \"Go Telegram Bot API\". For help \"/help\"."
+      "text": "\uD83D\uDCDDThis is a simple telegram chat bot (STCHB), written in Go (Golang) for a fun using \"Go Telegram Bot API\". For help \"/help\"."
     },
     "help": {
       "command": "help",
-      "text": "This is a simple telegram chat bot (STCHB), written in Go (Golang) for a fun using \"Go Telegram Bot API\".\nYou can setting up your age and interlocutor age \"/settings\".\n\"/start_chatting\" to start a conversation with a random person.\n\"/stop_chatting\" to stop a conversation."
+      "text": "\uD83D\uDCDD This is a simple telegram chat bot, written in Go(Golang) for a fun using \"Go Telegram Bot API\".\n\n⚙You can setting up your age, city or interlocutor - \"/settings\".\n\n\uD83D\uDCAC\"/start_chatting\" - to start a conversation with a random person.\n\uD83D\uDCAC\"/stop_chatting\" - to stop a conversation.\n\n\uD83D\uDCC1\"/me\" - to see information about yourself."
     },
     "chatting": {
       "start": "start_chatting",
@@ -15,8 +15,11 @@
     "settings": {
       "command": "settings"
     },
+    "me": {
+      "command": "me"
+    },
     "unknown": {
-      "text": "<strong>UNKNOWN MESSAGE<strong> \"/help\"."
+      "text": "<strong>\uD83D\uDD34UNKNOWN MESSAGE<strong> \"/help\"."
     }
   },
   "parse_mode": "HTML",
@@ -29,8 +32,8 @@
     "chat_ended": "<strong>\uD83D\uDD34CHAT ENDED</strong>"
   },
   "reply_keyboard_markup": {
-    "opened": "OPENED",
-    "changed": "CHANGED",
-    "closed": "CLOSED"
+    "opened": "✔OPENED",
+    "changed": "✔CHANGED",
+    "closed": "✕CLOSED"
   }
 }

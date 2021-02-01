@@ -76,67 +76,7 @@ func checkUpdate(update tgbotapi.Update, chats *betypes.Chats, bot *tgbotapi.Bot
 				panic(err)
 			}
 		} else if !isMessageCommand && isUserInChat {
-			var msg tgbotapi.Chattable
-			userInterlocutors := chats.GetUserInterlocutors(update.Message.From.ID)
-			if userInterlocutors == nil {
-				msg = tgbotapi.MessageConfig{
-					BaseChat:  tgbotapi.BaseChat{ChatID: int64(update.Message.From.ID)},
-					Text:      betypes.GetTexts().Chat.NotInChat,
-					ParseMode: betypes.GetTexts().ParseMode,
-				}
-
-				_, err := bot.Send(msg)
-				if err != nil {
-					logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-					panic(err)
-				}
-			} else {
-				for i := 0; i < len(userInterlocutors); i++ {
-					if update.Message.Audio != nil {
-						msg = tgbotapi.NewAudioShare(
-							int64(userInterlocutors[i].ID), update.Message.Audio.FileID)
-					} else if update.Message.Document != nil {
-						msg = tgbotapi.NewDocumentShare(
-							int64(userInterlocutors[i].ID), update.Message.Document.FileID)
-					} else if update.Message.Animation != nil {
-						msg = tgbotapi.NewAnimationShare(
-							int64(userInterlocutors[i].ID), update.Message.Animation.FileID)
-					} else if update.Message.Photo != nil {
-						msg = tgbotapi.NewPhotoShare(
-							int64(userInterlocutors[i].ID), (*update.Message.Photo)[0].FileID)
-					} else if update.Message.Sticker != nil {
-						msg = tgbotapi.NewStickerShare(
-							int64(userInterlocutors[i].ID), update.Message.Sticker.FileID)
-					} else if update.Message.Video != nil {
-						msg = tgbotapi.NewVideoShare(
-							int64(userInterlocutors[i].ID), update.Message.Video.FileID)
-					} else if update.Message.VideoNote != nil {
-						msg = tgbotapi.NewVideoNoteShare(int64(userInterlocutors[i].ID),
-							update.Message.VideoNote.Length, update.Message.VideoNote.FileID)
-					} else if update.Message.Voice != nil {
-						msg = tgbotapi.NewVoiceShare(int64(userInterlocutors[i].ID), update.Message.Voice.FileID)
-					} else {
-						if betypes.GetConfig().Chat.Users > 2 { // If there are more than two interlocutors.
-							msg = tgbotapi.MessageConfig{
-								BaseChat:  tgbotapi.BaseChat{ChatID: int64(userInterlocutors[i].ID)},
-								Text:      fmt.Sprintf("*INTERLOCUTOR %d:* %s", i+1, update.Message.Text),
-								ParseMode: betypes.GetTexts().ParseMode,
-							}
-						} else {
-							msg = tgbotapi.MessageConfig{
-								BaseChat: tgbotapi.BaseChat{ChatID: int64(userInterlocutors[i].ID)},
-								Text:     update.Message.Text,
-							}
-						}
-					}
-
-					_, err := bot.Send(msg)
-					if err != nil {
-						logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-						panic(err)
-					}
-				}
-			}
+			sendMessageToUserInterlocutors(*update.Message, chats, bot)
 		}
 	}
 }
@@ -159,6 +99,8 @@ func checkCommands(message tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi
 		commands.StopChatting(message.From.ID, chats, bot)
 	case betypes.GetTexts().Commands.Settings.Command:
 		commands.Settings(message.From.ID, bot)
+	case betypes.GetTexts().Commands.Me.Command:
+		commands.Me(message.From.ID, bot)
 	default:
 		msg := tgbotapi.MessageConfig{
 			BaseChat:  tgbotapi.BaseChat{ChatID: int64(message.From.ID)},
@@ -238,6 +180,70 @@ func checkCallbackQuery(callbackQuery tgbotapi.CallbackQuery, bot *tgbotapi.BotA
 		}
 	} else if markups.SettingsIsThereCallbackForChange(callbackQuery.Data) {
 		settingsCallbackForChange(callbackQuery, bot)
+	}
+}
+
+func sendMessageToUserInterlocutors(message tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
+	var msg tgbotapi.Chattable
+	userInterlocutors := chats.GetUserInterlocutors(message.From.ID)
+	if userInterlocutors == nil {
+		msg = tgbotapi.MessageConfig{
+			BaseChat:  tgbotapi.BaseChat{ChatID: int64(message.From.ID)},
+			Text:      betypes.GetTexts().Chat.NotInChat,
+			ParseMode: betypes.GetTexts().ParseMode,
+		}
+
+		_, err := bot.Send(msg)
+		if err != nil {
+			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+			panic(err)
+		}
+	} else {
+		for i := 0; i < len(userInterlocutors); i++ {
+			if message.Audio != nil {
+				msg = tgbotapi.NewAudioShare(
+					int64(userInterlocutors[i].ID), message.Audio.FileID)
+			} else if message.Document != nil {
+				msg = tgbotapi.NewDocumentShare(
+					int64(userInterlocutors[i].ID), message.Document.FileID)
+			} else if message.Animation != nil {
+				msg = tgbotapi.NewAnimationShare(
+					int64(userInterlocutors[i].ID), message.Animation.FileID)
+			} else if message.Photo != nil {
+				msg = tgbotapi.NewPhotoShare(
+					int64(userInterlocutors[i].ID), (*message.Photo)[0].FileID)
+			} else if message.Sticker != nil {
+				msg = tgbotapi.NewStickerShare(
+					int64(userInterlocutors[i].ID), message.Sticker.FileID)
+			} else if message.Video != nil {
+				msg = tgbotapi.NewVideoShare(
+					int64(userInterlocutors[i].ID), message.Video.FileID)
+			} else if message.VideoNote != nil {
+				msg = tgbotapi.NewVideoNoteShare(int64(userInterlocutors[i].ID),
+					message.VideoNote.Length, message.VideoNote.FileID)
+			} else if message.Voice != nil {
+				msg = tgbotapi.NewVoiceShare(int64(userInterlocutors[i].ID), message.Voice.FileID)
+			} else {
+				if betypes.GetConfig().Chat.Users > 2 { // If there are more than two interlocutors.
+					msg = tgbotapi.MessageConfig{
+						BaseChat:  tgbotapi.BaseChat{ChatID: int64(userInterlocutors[i].ID)},
+						Text:      fmt.Sprintf("*INTERLOCUTOR %d:* %s", i+1, message.Text),
+						ParseMode: betypes.GetTexts().ParseMode,
+					}
+				} else {
+					msg = tgbotapi.MessageConfig{
+						BaseChat: tgbotapi.BaseChat{ChatID: int64(userInterlocutors[i].ID)},
+						Text:     message.Text,
+					}
+				}
+			}
+
+			_, err := bot.Send(msg)
+			if err != nil {
+				logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+				panic(err)
+			}
+		}
 	}
 }
 
