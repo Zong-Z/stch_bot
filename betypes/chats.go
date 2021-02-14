@@ -53,8 +53,8 @@ func (c *Chats) FindSuitableChatsForUser(user User) []*Chat {
 			continue
 		}
 
-		userFormChat := c.Chats[i].Users[len(c.Chats[i].Users)-1]
-		if user.IsSuitableAge(userFormChat) && user.IsSuitableCity(userFormChat) {
+		u := c.Chats[i].Users[len(c.Chats[i].Users)-1]
+		if user.IsSuitableAge(u) && user.IsSuitableCity(u) && user.IsSuitableSex(u) {
 			chats = append(chats, &c.Chats[i])
 		}
 	}

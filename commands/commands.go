@@ -21,9 +21,7 @@ func Start(user betypes.User, bot *tgbotapi.BotAPI) {
 			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
 			panic(err)
 		}
-	}
-
-	if err != nil && err.Error() != redis.Nil.Error() {
+	} else if err != nil && err.Error() != redis.Nil.Error() {
 		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
 		panic(err)
 	}
@@ -189,14 +187,14 @@ func StopChatting(userID int, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
 // Settings sends to user settings reply markup.
 func Settings(userID int, bot *tgbotapi.BotAPI) {
 	settingsInlineKeyboardMarkup := markups.GetSettings().FindInlineKeyboardMarkup(
-		markups.SettingsPrefix + markups.SettingsReplyMarkupName)
+		markups.SettingsReplyMarkupPrefix + markups.SettingsReplyMarkupName)
 	if settingsInlineKeyboardMarkup == nil {
 		return
 	}
 
 	msg := tgbotapi.MessageConfig{
 		BaseChat:  tgbotapi.BaseChat{ChatID: int64(userID), ReplyMarkup: settingsInlineKeyboardMarkup},
-		Text:      "⚙" + strings.Replace(markups.SettingsReplyMarkupName, markups.SettingsPrefix, "", 1),
+		Text:      "⚙" + strings.Replace(markups.SettingsReplyMarkupName, markups.SettingsReplyMarkupPrefix, "", 1),
 		ParseMode: betypes.GetTexts().ParseMode,
 	}
 
@@ -207,9 +205,10 @@ func Settings(userID int, bot *tgbotapi.BotAPI) {
 	}
 }
 
+// Me sends information about itself to the user.
 func Me(userID int, bot *tgbotapi.BotAPI) {
-	user, err := database.DB.GetUser(userID)
-	if err != nil && err.Error() == redis.Nil.Error() || user == nil {
+	u, err := database.DB.GetUser(userID)
+	if err != nil && err.Error() == redis.Nil.Error() || u == nil {
 		msg := tgbotapi.MessageConfig{
 			BaseChat:  tgbotapi.BaseChat{ChatID: int64(userID)},
 			Text:      betypes.GetTexts().Chat.NotRegistered,
@@ -233,10 +232,12 @@ func Me(userID int, bot *tgbotapi.BotAPI) {
 		Text: fmt.Sprintf(
 			"📝*Information about you.*\n"+
 				"📅*Your age:* %s.\n"+
-				"📅*Interlocutor age:* %s.\n"+
+				"🙍‍♂🙍‍♀📅*Interlocutor age:* %s.\n"+
 				"🌍*Your city:* %s.\n"+
-				"🌍*Interlocutor city:* %s.\n",
-			user.Age, user.InterlocutorAge, user.City, user.InterlocutorCity,
+				"🙍‍♂🙍‍♀🌍*Interlocutor city:* %s.\n"+
+				"🙍‍♂🙍‍♀*Your sex:* %s.\n"+
+				"🙍‍♂🙍🌍‍♀*Sex of the interlocutor:* %s.",
+			u.Age, u.AgeOfTheInterlocutor, u.City, u.CityOfTheInterlocutor, u.Sex, u.SexOfTheInterlocutor,
 		),
 		ParseMode: "MARKDOWN",
 	}
