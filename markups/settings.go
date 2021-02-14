@@ -9,26 +9,26 @@ import (
 
 // SettingsReplyMarkups' constants.
 const (
-	SettingsReplyMarkupName = "SETTINGS"
-	SettingsPrefix          = SettingsReplyMarkupName + "_"
+	SettingsReplyMarkupName   = "SETTINGS"
+	SettingsReplyMarkupPrefix = SettingsReplyMarkupName + "_"
 )
 
 // SettingsReplyMarkups' age constants.
 const (
-	OwnAgeReplyMarkupName = "OWN AGE"
-	OwnAgeCallback        = OwnAgeReplyMarkupName
-	OwnAgePrefix          = OwnAgeCallback + "_"
+	OwnAgeReplyMarkupName     = "OWN AGE"
+	OwnAgeReplyMarkupCallback = OwnAgeReplyMarkupName
+	OwnAgePrefix              = OwnAgeReplyMarkupCallback + "_"
 
-	InterlocutorAgeReplyMarkupName = "INTERLOCUTOR AGE"
-	InterlocutorAgeCallback        = InterlocutorAgeReplyMarkupName
-	InterlocutorAgePrefix          = InterlocutorAgeCallback + "_"
+	AgeOfTheInterlocutorReplyMarkupName     = "AGE OF THE INTERLOCUTOR"
+	AgeOfTheInterlocutorReplyMarkupCallback = AgeOfTheInterlocutorReplyMarkupName
+	AgeOfTheInterlocutorPrefix              = AgeOfTheInterlocutorReplyMarkupCallback + "_"
 
 	SixteenOrLessCallback           = "SIXTEEN OR LESS"
 	FromSixteenToEighteenCallback   = "FROM SIXTEEN TO EIGHTEEN"
 	FromEighteenToTwentyOneCallback = "FROM EIGHTEEN TO TWENTY ONE"
 
-	OwnAgeText                  = "OWN AGE"
-	InterlocutorAgeText         = "INTERLOCUTOR AGE"
+	OwnAgeText                  = "📅OWN AGE"
+	AgeOfTheInterlocutorText    = "🙍‍♂🙍‍♀📅AGE OF THE INTERLOCUTOR"
 	SixteenOrLessText           = "SIXTEEN OR LESS"
 	FromSixteenToEighteenText   = "FROM SIXTEEN TO EIGHTEEN"
 	FromEighteenToTwentyOneText = "FROM EIGHTEEN TO TWENTY ONE"
@@ -36,16 +36,16 @@ const (
 
 // SettingsReplyMarkups' city constants.
 const (
-	OwnCityReplyMarkupName = "OWN CITY"
-	OwnCityCallback        = OwnCityReplyMarkupName
-	OwnCityPrefix          = OwnCityCallback + "_"
+	OwnCityReplyMarkupName     = "OWN CITY"
+	OwnCityReplyMarkupCallback = OwnCityReplyMarkupName
+	OwnCityPrefix              = OwnCityReplyMarkupCallback + "_"
 
-	InterlocutorCityReplyMarkupName = "INTERLOCUTOR CITY"
-	InterlocutorCityCallback        = InterlocutorCityReplyMarkupName
-	InterlocutorCityPrefix          = InterlocutorCityCallback + "_"
+	CityOfTheInterlocutorReplyMarkupName     = "CITY OF THE INTERLOCUTOR"
+	CityOfTheInterlocutorReplyMarkupCallback = CityOfTheInterlocutorReplyMarkupName
+	CityOfTheInterlocutorPrefix              = CityOfTheInterlocutorReplyMarkupCallback + "_"
 
-	OwnCityText          = "OWN CITY"
-	InterlocutorCityText = "INTERLOCUTOR CITY"
+	OwnCityText               = "🌍OWN CITY"
+	CityOfTheInterlocutorText = "🙍‍♂🙍‍♀🌍CITY OF THE INTERLOCUTOR"
 )
 
 // SettingsReplyMarkups' cities.
@@ -55,50 +55,76 @@ const (
 	Kiev     = "KIEV"
 )
 
+// SexReplyMarkups' sex constants.
+const (
+	OwnSexReplyMarkupName     = "OWN SEX"
+	OwnSexReplyMarkupCallback = OwnSexReplyMarkupName
+	OwnSexPrefix              = OwnSexReplyMarkupCallback + "_"
+
+	SexOfTheInterlocutorReplyMarkupName     = "SEX OF THE INTERLOCUTOR"
+	SexOfTheInterlocutorReplyMarkupCallback = SexOfTheInterlocutorReplyMarkupName
+	SexOfTheInterlocutorPrefix              = SexOfTheInterlocutorReplyMarkupCallback + "_"
+
+	OwnSexText               = "🙍‍♂🙍‍♀OWN SEX"
+	SexOfTheInterlocutorText = "🙍‍♂🙍‍♀SEX OF THE INTERLOCUTOR"
+	MaleText                 = "🙍‍♂MALE"
+	FemaleText               = "🙍‍♀FEMALE"
+	MaleCallback             = "MALE"
+	FemaleCallback           = "FEMALE"
+)
+
 var (
 	ownAgeInlineKeyboardMarkup = tgbotapi.InlineKeyboardMarkup{
 		InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData(SixteenOrLessText,
-					SettingsPrefix+OwnAgePrefix+SixteenOrLessCallback),
+					SettingsReplyMarkupPrefix+OwnAgePrefix+SixteenOrLessCallback,
+				),
 			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData(FromSixteenToEighteenText,
-					SettingsPrefix+OwnAgePrefix+FromSixteenToEighteenCallback),
+					SettingsReplyMarkupPrefix+OwnAgePrefix+FromSixteenToEighteenCallback,
+				),
 			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData(FromEighteenToTwentyOneText,
-					SettingsPrefix+OwnAgePrefix+FromEighteenToTwentyOneCallback),
+					SettingsReplyMarkupPrefix+OwnAgePrefix+FromEighteenToTwentyOneCallback,
+				),
 			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData(DoesNotMatter,
-					SettingsPrefix+OwnAgePrefix+betypes.UserNil),
+					SettingsReplyMarkupPrefix+OwnAgePrefix+betypes.UserNil,
+				),
 			),
 			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(Back, SettingsPrefix+SettingsReplyMarkupName),
+				tgbotapi.NewInlineKeyboardButtonData(Back, SettingsReplyMarkupPrefix+SettingsReplyMarkupName),
 			),
 		},
 	}
-	interlocutorAgeInlineKeyboardMarkup = tgbotapi.InlineKeyboardMarkup{
+	ageOfTheInterlocutorInlineKeyboardMarkup = tgbotapi.InlineKeyboardMarkup{
 		InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData(SixteenOrLessText,
-					SettingsPrefix+InterlocutorAgePrefix+SixteenOrLessCallback),
+					SettingsReplyMarkupPrefix+AgeOfTheInterlocutorPrefix+SixteenOrLessCallback,
+				),
 			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData(FromSixteenToEighteenText,
-					SettingsPrefix+InterlocutorAgePrefix+FromSixteenToEighteenCallback),
+					SettingsReplyMarkupPrefix+AgeOfTheInterlocutorPrefix+FromSixteenToEighteenCallback,
+				),
 			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData(FromEighteenToTwentyOneText,
-					SettingsPrefix+InterlocutorAgePrefix+FromEighteenToTwentyOneCallback),
+					SettingsReplyMarkupPrefix+AgeOfTheInterlocutorPrefix+FromEighteenToTwentyOneCallback,
+				),
 			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData(DoesNotMatter,
-					SettingsPrefix+InterlocutorAgePrefix+betypes.UserNil),
+					SettingsReplyMarkupPrefix+AgeOfTheInterlocutorPrefix+betypes.UserNil,
+				),
 			),
 			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(Back, SettingsPrefix+SettingsReplyMarkupName),
+				tgbotapi.NewInlineKeyboardButtonData(Back, SettingsReplyMarkupPrefix+SettingsReplyMarkupName),
 			),
 		},
 	}
@@ -106,40 +132,80 @@ var (
 		InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData(Lviv,
-					SettingsPrefix+OwnCityPrefix+Lviv,
+					SettingsReplyMarkupPrefix+OwnCityPrefix+Lviv,
 				),
 				tgbotapi.NewInlineKeyboardButtonData(Ternopil,
-					SettingsPrefix+OwnCityPrefix+Ternopil,
+					SettingsReplyMarkupPrefix+OwnCityPrefix+Ternopil,
 				),
 				tgbotapi.NewInlineKeyboardButtonData(Kiev,
-					SettingsPrefix+OwnCityPrefix+Kiev,
+					SettingsReplyMarkupPrefix+OwnCityPrefix+Kiev,
 				),
 				tgbotapi.NewInlineKeyboardButtonData(DoesNotMatter,
-					SettingsPrefix+OwnCityPrefix+betypes.UserNil,
+					SettingsReplyMarkupPrefix+OwnCityPrefix+betypes.UserNil,
 				),
 			),
 			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(Back, SettingsPrefix+SettingsReplyMarkupName),
+				tgbotapi.NewInlineKeyboardButtonData(Back, SettingsReplyMarkupPrefix+SettingsReplyMarkupName),
 			),
 		},
 	}
-	interlocutorCityInlineKeyboardMarkup = tgbotapi.InlineKeyboardMarkup{
+	cityOfTheInterlocutorInlineKeyboardMarkup = tgbotapi.InlineKeyboardMarkup{
 		InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData(Lviv,
-					SettingsPrefix+InterlocutorCityPrefix+Lviv,
+					SettingsReplyMarkupPrefix+CityOfTheInterlocutorPrefix+Lviv,
 				),
 				tgbotapi.NewInlineKeyboardButtonData(Ternopil,
-					SettingsPrefix+InterlocutorCityPrefix+Ternopil,
+					SettingsReplyMarkupPrefix+CityOfTheInterlocutorPrefix+Ternopil,
 				),
 				tgbotapi.NewInlineKeyboardButtonData(Kiev,
-					SettingsPrefix+InterlocutorCityPrefix+Kiev,
+					SettingsReplyMarkupPrefix+CityOfTheInterlocutorPrefix+Kiev,
 				),
 				tgbotapi.NewInlineKeyboardButtonData(DoesNotMatter,
-					SettingsPrefix+InterlocutorCityPrefix+betypes.UserNil),
+					SettingsReplyMarkupPrefix+CityOfTheInterlocutorPrefix+betypes.UserNil),
 			),
 			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(Back, SettingsPrefix+SettingsReplyMarkupName),
+				tgbotapi.NewInlineKeyboardButtonData(Back, SettingsReplyMarkupPrefix+SettingsReplyMarkupName),
+			),
+		},
+	}
+	ownSexInlineKeyboardMarkup = tgbotapi.InlineKeyboardMarkup{
+		InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData(MaleText,
+					SettingsReplyMarkupPrefix+OwnSexPrefix+MaleCallback,
+				),
+				tgbotapi.NewInlineKeyboardButtonData(FemaleText,
+					SettingsReplyMarkupPrefix+OwnSexPrefix+FemaleCallback,
+				),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData(DoesNotMatter,
+					SettingsReplyMarkupPrefix+OwnSexPrefix+betypes.UserNil,
+				),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData(Back, SettingsReplyMarkupPrefix+SettingsReplyMarkupName),
+			),
+		},
+	}
+	sexOfTheInterlocutorInlineKeyboardMarkup = tgbotapi.InlineKeyboardMarkup{
+		InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData(MaleText,
+					SettingsReplyMarkupPrefix+SexOfTheInterlocutorPrefix+MaleCallback,
+				),
+				tgbotapi.NewInlineKeyboardButtonData(FemaleText,
+					SettingsReplyMarkupPrefix+SexOfTheInterlocutorPrefix+FemaleCallback,
+				),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData(DoesNotMatter,
+					SettingsReplyMarkupPrefix+SexOfTheInterlocutorPrefix+betypes.UserNil,
+				),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData(Back, SettingsReplyMarkupPrefix+SettingsReplyMarkupName),
 			),
 		},
 	}
@@ -147,60 +213,78 @@ var (
 
 var settings = ReplyMarkups{
 	ReplyMarkup{
-		Name: SettingsPrefix + SettingsReplyMarkupName,
+		Name: SettingsReplyMarkupPrefix + SettingsReplyMarkupName,
 		InlineKeyboardMarkup: tgbotapi.InlineKeyboardMarkup{InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
 			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData(OwnSexText,
+					SettingsReplyMarkupPrefix+OwnSexReplyMarkupCallback,
+				),
+				tgbotapi.NewInlineKeyboardButtonData(SexOfTheInterlocutorText,
+					SettingsReplyMarkupPrefix+SexOfTheInterlocutorReplyMarkupCallback,
+				),
+			),
+			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData(OwnAgeText,
-					SettingsPrefix+OwnAgeCallback),
-				tgbotapi.NewInlineKeyboardButtonData(InterlocutorAgeText,
-					SettingsPrefix+InterlocutorAgeCallback),
+					SettingsReplyMarkupPrefix+OwnAgeReplyMarkupCallback,
+				),
+				tgbotapi.NewInlineKeyboardButtonData(AgeOfTheInterlocutorText,
+					SettingsReplyMarkupPrefix+AgeOfTheInterlocutorReplyMarkupCallback,
+				),
 			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData(OwnCityText,
-					SettingsPrefix+OwnCityCallback),
-				tgbotapi.NewInlineKeyboardButtonData(InterlocutorCityText,
-					SettingsPrefix+InterlocutorCityCallback),
+					SettingsReplyMarkupPrefix+OwnCityReplyMarkupCallback,
+				),
+				tgbotapi.NewInlineKeyboardButtonData(CityOfTheInterlocutorText,
+					SettingsReplyMarkupPrefix+CityOfTheInterlocutorReplyMarkupCallback,
+				),
 			),
 			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(CloseCallback, SettingsPrefix+CloseCallback),
+				tgbotapi.NewInlineKeyboardButtonData(CloseCallback, SettingsReplyMarkupPrefix+CloseCallback),
 			),
 		}},
 	},
 	ReplyMarkup{
-		Name:                 SettingsPrefix + OwnAgeReplyMarkupName,
+		Name:                 SettingsReplyMarkupPrefix + OwnAgeReplyMarkupName,
 		InlineKeyboardMarkup: ownAgeInlineKeyboardMarkup,
 	},
 	ReplyMarkup{
-		Name:                 SettingsPrefix + InterlocutorAgeReplyMarkupName,
-		InlineKeyboardMarkup: interlocutorAgeInlineKeyboardMarkup,
+		Name:                 SettingsReplyMarkupPrefix + AgeOfTheInterlocutorReplyMarkupName,
+		InlineKeyboardMarkup: ageOfTheInterlocutorInlineKeyboardMarkup,
 	},
 	ReplyMarkup{
-		Name:                 SettingsPrefix + OwnCityReplyMarkupName,
+		Name:                 SettingsReplyMarkupPrefix + OwnCityReplyMarkupName,
 		InlineKeyboardMarkup: ownCityInlineKeyboardMarkup,
 	},
 	ReplyMarkup{
-		Name:                 SettingsPrefix + InterlocutorCityReplyMarkupName,
-		InlineKeyboardMarkup: interlocutorCityInlineKeyboardMarkup,
+		Name:                 SettingsReplyMarkupPrefix + CityOfTheInterlocutorReplyMarkupName,
+		InlineKeyboardMarkup: cityOfTheInterlocutorInlineKeyboardMarkup,
+	},
+	ReplyMarkup{
+		Name:                 SettingsReplyMarkupPrefix + OwnSexReplyMarkupName,
+		InlineKeyboardMarkup: ownSexInlineKeyboardMarkup,
+	},
+	ReplyMarkup{
+		Name:                 SettingsReplyMarkupPrefix + SexOfTheInterlocutorReplyMarkupName,
+		InlineKeyboardMarkup: sexOfTheInterlocutorInlineKeyboardMarkup,
 	},
 }
 
-// IsThereCloseCallback if the callback contains CloseCallback, returns true.
-func IsThereCloseCallback(callbackQueryData string) bool {
-	return strings.Contains(callbackQueryData, CloseCallback)
-}
-
 // SettingsIsThereMarkupRequest return true if callback contains OwnAgeReplyMarkupName,
-// InterlocutorAgeReplyMarkupName, OwnCityReplyMarkupName, InterlocutorCityReplyMarkupName.
+// AgeOfTheInterlocutorReplyMarkupName, OwnCityReplyMarkupName, CityOfTheInterlocutorReplyMarkupName, etc...
 func SettingsIsThereMarkupRequest(callbackQueryData string) bool {
 	return settings.FindInlineKeyboardMarkup(callbackQueryData) != nil
 }
 
-// SettingsIsThereCallbackForChange if there is a callback to change your own age/city or interlocutor, returns true.
+// SettingsIsThereCallbackForChange if there is a callback to change your own age/city/sex or interlocutor, returns
+// true.
 func SettingsIsThereCallbackForChange(callbackQueryData string) bool {
 	return strings.Contains(callbackQueryData, OwnAgePrefix) ||
-		strings.Contains(callbackQueryData, InterlocutorAgePrefix) ||
+		strings.Contains(callbackQueryData, AgeOfTheInterlocutorPrefix) ||
 		strings.Contains(callbackQueryData, OwnCityPrefix) ||
-		strings.Contains(callbackQueryData, InterlocutorCityPrefix)
+		strings.Contains(callbackQueryData, CityOfTheInterlocutorPrefix) ||
+		strings.Contains(callbackQueryData, OwnSexPrefix) ||
+		strings.Contains(callbackQueryData, SexOfTheInterlocutorPrefix)
 }
 
 // GetSettings return settings(ReplyMarkup).

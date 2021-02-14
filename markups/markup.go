@@ -24,6 +24,11 @@ const (
 	Back          = "<-BACK"
 )
 
+// IsThereCloseCallback if the callback contains CloseCallback, returns true.
+func IsThereCloseCallback(callbackQueryData string) bool {
+	return strings.Contains(callbackQueryData, CloseCallback)
+}
+
 // FindInlineKeyboardMarkup return *tgbotapi.InlineKeyboardMarkup by reply markup name.
 //
 // Return nil if reply markup do not found.

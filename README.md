@@ -45,6 +45,8 @@ Go to [releases page](https://github.com/Zong-Z/stch_bot/releases) for details.
 
 - [x] Ability to send photos, videos and documents to chat.
 
+- [ ] CLI.
+
 ## Contributions
 
 If you have **questions**, **ideas** or you find a **bug**, you can create an [issue](https://github.com/Zong-Z/stch_bot/issues) and it will be reviewed. If you want to contribute to the source code, fork this repository (`master`), realize your ideas and then create a new pull request. **Feel free!**
