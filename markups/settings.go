@@ -28,7 +28,7 @@ const (
 	FromEighteenToTwentyOneCallback = "FROM EIGHTEEN TO TWENTY ONE"
 
 	OwnAgeText                  = "📅OWN AGE"
-	AgeOfTheInterlocutorText    = "🙍‍♂🙍‍♀📅AGE OF THE INTERLOCUTOR"
+	AgeOfTheInterlocutorText    = "🙍‍♂🙍‍♀📅🌍AGE OF THE INTERLOCUTOR"
 	SixteenOrLessText           = "SIXTEEN OR LESS"
 	FromSixteenToEighteenText   = "FROM SIXTEEN TO EIGHTEEN"
 	FromEighteenToTwentyOneText = "FROM EIGHTEEN TO TWENTY ONE"
@@ -66,7 +66,7 @@ const (
 	SexOfTheInterlocutorPrefix              = SexOfTheInterlocutorReplyMarkupCallback + "_"
 
 	OwnSexText               = "🙍‍♂🙍‍♀OWN SEX"
-	SexOfTheInterlocutorText = "🙍‍♂🙍‍♀SEX OF THE INTERLOCUTOR"
+	SexOfTheInterlocutorText = "🙍‍♂🙍‍♀🌍SEX OF THE INTERLOCUTOR"
 	MaleText                 = "🙍‍♂MALE"
 	FemaleText               = "🙍‍♀FEMALE"
 	MaleCallback             = "MALE"
