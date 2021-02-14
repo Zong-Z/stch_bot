@@ -236,7 +236,7 @@ func Me(userID int, bot *tgbotapi.BotAPI) {
 				"🌍*Your city:* %s.\n"+
 				"🙍‍♂🙍‍♀🌍*Interlocutor city:* %s.\n"+
 				"🙍‍♂🙍‍♀*Your sex:* %s.\n"+
-				"🙍‍♂🙍‍♀*Sex of the interlocutor:* %s.",
+				"🙍‍♂🙍🌍‍♀*Sex of the interlocutor:* %s.",
 			u.Age, u.AgeOfTheInterlocutor, u.City, u.CityOfTheInterlocutor, u.Sex, u.SexOfTheInterlocutor,
 		),
 		ParseMode: "MARKDOWN",
