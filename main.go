@@ -177,7 +177,7 @@ func checkCallbackQuery(callbackQuery tgbotapi.CallbackQuery, bot *tgbotapi.BotA
 			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
 			panic(err)
 		}
-	} else if markups.SettingsIsThereCallbackForChange(callbackQuery.Data) {
+	} else if markups.SettingsIsThereCallbackForChangeUserData(callbackQuery.Data) {
 		settingsCallbackForChangeUserData(callbackQuery, bot)
 	}
 }

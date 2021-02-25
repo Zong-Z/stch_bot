@@ -276,9 +276,9 @@ func SettingsIsThereMarkupRequest(callbackQueryData string) bool {
 	return settings.FindInlineKeyboardMarkup(callbackQueryData) != nil
 }
 
-// SettingsIsThereCallbackForChange if there is a callback to change your own age/city/sex or interlocutor, returns
-// true.
-func SettingsIsThereCallbackForChange(callbackQueryData string) bool {
+// SettingsIsThereCallbackForChangeUserData if there is a callback to change your own age/city/sex or interlocutor,
+// returns true.
+func SettingsIsThereCallbackForChangeUserData(callbackQueryData string) bool {
 	return strings.Contains(callbackQueryData, OwnAgePrefix) ||
 		strings.Contains(callbackQueryData, AgeOfTheInterlocutorPrefix) ||
 		strings.Contains(callbackQueryData, OwnCityPrefix) ||
