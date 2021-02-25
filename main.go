@@ -12,7 +12,6 @@ import (
 	"telegram-chat_bot/markups"
 
 	"github.com/go-redis/redis/v8"
-
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -59,11 +58,11 @@ func checkUpdate(update tgbotapi.Update, chats *betypes.Chats, bot *tgbotapi.Bot
 	if update.CallbackQuery != nil {
 		checkCallbackQuery(*update.CallbackQuery, bot)
 	} else if update.Message != nil {
-		isMessageCommand := update.Message.IsCommand()
+		isCommand := update.Message.IsCommand()
 		isUserInChat := chats.IsUserInChat(update.Message.From.ID)
-		if isMessageCommand {
+		if isCommand {
 			checkCommands(*update.Message, chats, bot)
-		} else if !isMessageCommand && !isUserInChat {
+		} else if !isCommand && !isUserInChat {
 			msg := tgbotapi.MessageConfig{
 				BaseChat:  tgbotapi.BaseChat{ChatID: int64(update.Message.From.ID)},
 				Text:      betypes.GetTexts().Commands.Unknown.Text,
@@ -75,7 +74,7 @@ func checkUpdate(update tgbotapi.Update, chats *betypes.Chats, bot *tgbotapi.Bot
 				logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
 				panic(err)
 			}
-		} else if !isMessageCommand && isUserInChat {
+		} else if !isCommand && isUserInChat {
 			sendMessageToUserInterlocutors(*update.Message, chats, bot)
 		}
 	}
@@ -124,13 +123,8 @@ func checkCallbackQuery(callbackQuery tgbotapi.CallbackQuery, bot *tgbotapi.BotA
 			panic(err)
 		}
 	} else if markups.SettingsIsThereMarkupRequest(callbackQuery.Data) {
-		inlineKeyboardMarkup := markups.GetSettings().FindInlineKeyboardMarkup(callbackQuery.Data)
-		if inlineKeyboardMarkup == nil {
-			return
-		}
-
-		user, err := database.DB.GetUser(callbackQuery.From.ID)
-		if err != nil && err.Error() == redis.Nil.Error() {
+		u, err := database.DB.GetUser(callbackQuery.From.ID)
+		if err != nil && err.Error() == redis.Nil.Error() || u == nil {
 			msg := tgbotapi.MessageConfig{
 				BaseChat:  tgbotapi.BaseChat{ChatID: int64(callbackQuery.From.ID)},
 				Text:      betypes.GetTexts().Chat.NotRegistered,
@@ -142,21 +136,26 @@ func checkCallbackQuery(callbackQuery tgbotapi.CallbackQuery, bot *tgbotapi.BotA
 				logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
 				panic(err)
 			}
-		}
-
-		if err != nil && err.Error() != redis.Nil.Error() || user == nil {
+		} else if err != nil && err.Error() != redis.Nil.Error() {
 			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
 			panic(err)
+		}
+
+		inlineKeyboardMarkup := markups.GetSettings().FindInlineKeyboardMarkup(callbackQuery.Data)
+		if inlineKeyboardMarkup == nil {
+			return
 		}
 
 		for i := 0; i < len(inlineKeyboardMarkup.InlineKeyboard); i++ {
 			for j := 0; j < len(inlineKeyboardMarkup.InlineKeyboard[i]); j++ {
 				callbackData := strings.Replace(*inlineKeyboardMarkup.InlineKeyboard[i][j].CallbackData,
-					markups.SettingsPrefix, "", 1)
-				if strings.EqualFold(callbackData, markups.OwnAgePrefix+user.Age) ||
-					strings.EqualFold(callbackData, markups.OwnCityPrefix+user.City) ||
-					strings.EqualFold(callbackData, markups.InterlocutorAgePrefix+user.InterlocutorAge) ||
-					strings.EqualFold(callbackData, markups.InterlocutorCityPrefix+user.InterlocutorCity) {
+					markups.SettingsReplyMarkupPrefix, "", 1)
+				if strings.EqualFold(callbackData, markups.OwnAgePrefix+u.Age) ||
+					strings.EqualFold(callbackData, markups.AgeOfTheInterlocutorPrefix+u.AgeOfTheInterlocutor) ||
+					strings.EqualFold(callbackData, markups.OwnCityPrefix+u.City) ||
+					strings.EqualFold(callbackData, markups.CityOfTheInterlocutorPrefix+u.CityOfTheInterlocutor) ||
+					strings.EqualFold(callbackData, markups.OwnSexPrefix+u.Sex) ||
+					strings.EqualFold(callbackData, markups.SexOfTheInterlocutorPrefix+u.SexOfTheInterlocutor) {
 					inlineKeyboardMarkup.InlineKeyboard[i][j].Text = fmt.Sprintf("➡%s⬅",
 						inlineKeyboardMarkup.InlineKeyboard[i][j].Text)
 				}
@@ -178,8 +177,8 @@ func checkCallbackQuery(callbackQuery tgbotapi.CallbackQuery, bot *tgbotapi.BotA
 			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
 			panic(err)
 		}
-	} else if markups.SettingsIsThereCallbackForChange(callbackQuery.Data) {
-		settingsCallbackForChange(callbackQuery, bot)
+	} else if markups.SettingsIsThereCallbackForChangeUserData(callbackQuery.Data) {
+		settingsCallbackForChangeUserData(callbackQuery, bot)
 	}
 }
 
@@ -247,9 +246,9 @@ func sendMessageToUserInterlocutors(message tgbotapi.Message, chats *betypes.Cha
 	}
 }
 
-func settingsCallbackForChange(callbackQuery tgbotapi.CallbackQuery, bot *tgbotapi.BotAPI) {
+func settingsCallbackForChangeUserData(callbackQuery tgbotapi.CallbackQuery, bot *tgbotapi.BotAPI) {
 	if func() bool {
-		user, err := database.DB.GetUser(callbackQuery.From.ID)
+		u, err := database.DB.GetUser(callbackQuery.From.ID)
 		if err != nil && err.Error() == redis.Nil.Error() {
 			msg := tgbotapi.MessageConfig{
 				BaseChat:  tgbotapi.BaseChat{ChatID: int64(callbackQuery.From.ID)},
@@ -271,40 +270,54 @@ func settingsCallbackForChange(callbackQuery tgbotapi.CallbackQuery, bot *tgbota
 			panic(err)
 		}
 
-		callbackQueryData := strings.Replace(callbackQuery.Data, markups.SettingsPrefix, "", 1)
+		callbackQueryData := strings.Replace(callbackQuery.Data, markups.SettingsReplyMarkupPrefix, "", 1)
 		if strings.Contains(callbackQueryData, markups.OwnAgePrefix) {
 			callbackQueryData = strings.Replace(callbackQueryData, markups.OwnAgePrefix, "", 1)
-			if user.Age == callbackQueryData {
+			if u.Age == callbackQueryData {
 				return true
 			}
 
-			user.Age = callbackQueryData
-		} else if strings.Contains(callbackQueryData, markups.InterlocutorAgePrefix) {
-			callbackQueryData = strings.Replace(callbackQueryData, markups.InterlocutorAgePrefix, "", 1)
-			if user.InterlocutorAge == callbackQueryData {
+			u.Age = callbackQueryData
+		} else if strings.Contains(callbackQueryData, markups.AgeOfTheInterlocutorPrefix) {
+			callbackQueryData = strings.Replace(callbackQueryData, markups.AgeOfTheInterlocutorPrefix, "", 1)
+			if u.AgeOfTheInterlocutor == callbackQueryData {
 				return true
 			}
 
-			user.InterlocutorAge = callbackQueryData
+			u.AgeOfTheInterlocutor = callbackQueryData
 		} else if strings.Contains(callbackQueryData, markups.OwnCityPrefix) {
 			callbackQueryData = strings.Replace(callbackQueryData, markups.OwnCityPrefix, "", 1)
-			if user.City == callbackQueryData {
+			if u.City == callbackQueryData {
 				return true
 			}
 
-			user.City = callbackQueryData
-		} else if strings.Contains(callbackQueryData, markups.InterlocutorCityPrefix) {
-			callbackQueryData = strings.Replace(callbackQueryData, markups.InterlocutorCityPrefix, "", 1)
-			if user.InterlocutorCity == callbackQueryData {
+			u.City = callbackQueryData
+		} else if strings.Contains(callbackQueryData, markups.CityOfTheInterlocutorPrefix) {
+			callbackQueryData = strings.Replace(callbackQueryData, markups.CityOfTheInterlocutorPrefix, "", 1)
+			if u.CityOfTheInterlocutor == callbackQueryData {
 				return true
 			}
 
-			user.InterlocutorCity = callbackQueryData
+			u.CityOfTheInterlocutor = callbackQueryData
+		} else if strings.Contains(callbackQueryData, markups.OwnSexPrefix) {
+			callbackQueryData = strings.Replace(callbackQueryData, markups.OwnSexPrefix, "", 1)
+			if u.Sex == callbackQueryData {
+				return true
+			}
+
+			u.Sex = callbackQueryData
+		} else if strings.Contains(callbackQueryData, markups.SexOfTheInterlocutorPrefix) {
+			callbackQueryData = strings.Replace(callbackQueryData, markups.SexOfTheInterlocutorPrefix, "", 1)
+			if u.SexOfTheInterlocutor == callbackQueryData {
+				return true
+			}
+
+			u.SexOfTheInterlocutor = callbackQueryData
 		} else {
 			return false
 		}
 
-		err = database.DB.SaveUser(*user)
+		err = database.DB.SaveUser(*u)
 		if err != nil {
 			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
 			panic(err)
@@ -320,7 +333,7 @@ func settingsCallbackForChange(callbackQuery tgbotapi.CallbackQuery, bot *tgbota
 		}
 
 		settingsInlineKeyboard := markups.GetSettings().FindInlineKeyboardMarkup(
-			markups.SettingsPrefix + markups.SettingsReplyMarkupName)
+			markups.SettingsReplyMarkupPrefix + markups.SettingsReplyMarkupName)
 		if settingsInlineKeyboard == nil {
 			return
 		}
