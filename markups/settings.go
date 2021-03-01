@@ -1,9 +1,13 @@
 package markups
 
 import (
+	"fmt"
 	"strings"
 	"telegram-chat_bot/betypes"
+	database "telegram-chat_bot/db"
+	"telegram-chat_bot/logger"
 
+	"github.com/go-redis/redis/v8"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -211,8 +215,8 @@ var (
 	}
 )
 
-var settings = ReplyMarkups{
-	ReplyMarkup{
+var settings = Markups{
+	Markup{
 		Name: SettingsReplyMarkupPrefix + SettingsReplyMarkupName,
 		InlineKeyboardMarkup: tgbotapi.InlineKeyboardMarkup{InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
 			tgbotapi.NewInlineKeyboardRow(
@@ -244,41 +248,44 @@ var settings = ReplyMarkups{
 			),
 		}},
 	},
-	ReplyMarkup{
+	Markup{
 		Name:                 SettingsReplyMarkupPrefix + OwnAgeReplyMarkupName,
 		InlineKeyboardMarkup: ownAgeInlineKeyboardMarkup,
 	},
-	ReplyMarkup{
+	Markup{
 		Name:                 SettingsReplyMarkupPrefix + AgeOfTheInterlocutorReplyMarkupName,
 		InlineKeyboardMarkup: ageOfTheInterlocutorInlineKeyboardMarkup,
 	},
-	ReplyMarkup{
+	Markup{
 		Name:                 SettingsReplyMarkupPrefix + OwnCityReplyMarkupName,
 		InlineKeyboardMarkup: ownCityInlineKeyboardMarkup,
 	},
-	ReplyMarkup{
+	Markup{
 		Name:                 SettingsReplyMarkupPrefix + CityOfTheInterlocutorReplyMarkupName,
 		InlineKeyboardMarkup: cityOfTheInterlocutorInlineKeyboardMarkup,
 	},
-	ReplyMarkup{
+	Markup{
 		Name:                 SettingsReplyMarkupPrefix + OwnSexReplyMarkupName,
 		InlineKeyboardMarkup: ownSexInlineKeyboardMarkup,
 	},
-	ReplyMarkup{
+	Markup{
 		Name:                 SettingsReplyMarkupPrefix + SexOfTheInterlocutorReplyMarkupName,
 		InlineKeyboardMarkup: sexOfTheInterlocutorInlineKeyboardMarkup,
 	},
 }
 
-// SettingsIsThereMarkupRequest return true if callback contains OwnAgeReplyMarkupName,
+// Settings structure, which stores the functions of the settings.
+type Settings struct{}
+
+// IsMarkupRequest return true if callback contains OwnAgeReplyMarkupName,
 // AgeOfTheInterlocutorReplyMarkupName, OwnCityReplyMarkupName, CityOfTheInterlocutorReplyMarkupName, etc...
-func SettingsIsThereMarkupRequest(callbackQueryData string) bool {
-	return settings.FindInlineKeyboardMarkup(callbackQueryData) != nil
+func (Settings) IsMarkupRequest(callbackQueryData string) bool {
+	return settings.FindInlineKeyboard(callbackQueryData) != nil
 }
 
-// SettingsIsThereCallbackForChangeUserData if there is a callback to change your own age/city/sex or interlocutor,
+// IsCallbackForChangeUserData if there is a callback to change your own age/city/sex or interlocutor,
 // returns true.
-func SettingsIsThereCallbackForChangeUserData(callbackQueryData string) bool {
+func (Settings) IsCallbackForChangeUserData(callbackQueryData string) bool {
 	return strings.Contains(callbackQueryData, OwnAgePrefix) ||
 		strings.Contains(callbackQueryData, AgeOfTheInterlocutorPrefix) ||
 		strings.Contains(callbackQueryData, OwnCityPrefix) ||
@@ -287,7 +294,163 @@ func SettingsIsThereCallbackForChangeUserData(callbackQueryData string) bool {
 		strings.Contains(callbackQueryData, SexOfTheInterlocutorPrefix)
 }
 
-// GetSettings return settings(ReplyMarkup).
-func GetSettings() ReplyMarkups {
+// SendMarkupByCallbackQuery sends necessary keypad by callback.
+//
+// If the callback is wrong, it does nothing.
+func (Settings) SendMarkupByCallbackQuery(callbackQuery tgbotapi.CallbackQuery, bot *tgbotapi.BotAPI) {
+	settings := Settings{}
+	user, err := database.DB.GetUser(callbackQuery.From.ID)
+	if err != nil && err.Error() == redis.Nil.Error() || user == nil {
+		msg := tgbotapi.MessageConfig{
+			BaseChat:  tgbotapi.BaseChat{ChatID: int64(callbackQuery.From.ID)},
+			Text:      betypes.GetTexts().Chat.NotRegistered,
+			ParseMode: betypes.GetTexts().ParseMode,
+		}
+
+		_, err := bot.Send(msg)
+		if err != nil {
+			logger.ForError(err.Error())
+		}
+
+		logger.ForInfo(fmt.Sprintf("User %d, not registered.", callbackQuery.From.ID))
+		return
+	} else if err != nil && err.Error() != redis.Nil.Error() {
+		logger.ForError(err.Error())
+	}
+
+	inlineKeyboard := settings.GetSettings().FindInlineKeyboard(callbackQuery.Data)
+	if inlineKeyboard == nil {
+		logger.ForWarning("Inline keyboard not found. Unknown callback.")
+		return
+	}
+
+	for i, buttons := range inlineKeyboard.InlineKeyboard {
+		for j, button := range buttons {
+			callbackData := strings.Replace(*button.CallbackData, SettingsReplyMarkupPrefix, "", 1)
+			isSelectedByUser := strings.EqualFold(callbackData, OwnAgePrefix+user.Age) ||
+				strings.EqualFold(callbackData, AgeOfTheInterlocutorPrefix+user.AgeOfTheInterlocutor) ||
+				strings.EqualFold(callbackData, OwnCityPrefix+user.City) ||
+				strings.EqualFold(callbackData, CityOfTheInterlocutorPrefix+user.CityOfTheInterlocutor) ||
+				strings.EqualFold(callbackData, OwnSexPrefix+user.Sex) ||
+				strings.EqualFold(callbackData, SexOfTheInterlocutorPrefix+user.SexOfTheInterlocutor)
+			if isSelectedByUser {
+				inlineKeyboard.InlineKeyboard[i][j].Text = fmt.Sprintf("➡%s⬅", button.Text)
+			}
+		}
+	}
+
+	_, err = bot.Send(tgbotapi.NewEditMessageReplyMarkup(int64(user.ID), callbackQuery.Message.MessageID, *inlineKeyboard))
+	if err != nil {
+		logger.ForError(err.Error())
+	}
+
+	_, err = bot.AnswerCallbackQuery(tgbotapi.NewCallback(callbackQuery.ID, betypes.GetTexts().ReplyKeyboardMarkup.Opened))
+	if err != nil {
+		logger.ForError(err.Error())
+	}
+}
+
+// ChangeUserDataByCallbackQuery changes the user settings by the callback and saves them to the database.
+// If the callback is wrong, it does nothing.
+func (Settings) ChangeUserDataByCallbackQuery(callbackQuery tgbotapi.CallbackQuery, bot *tgbotapi.BotAPI) {
+	haveUserSettingsBeenChanged := func() bool {
+		user, err := database.DB.GetUser(callbackQuery.From.ID)
+		if err != nil && err.Error() == redis.Nil.Error() || user == nil {
+			msg := tgbotapi.MessageConfig{
+				BaseChat:  tgbotapi.BaseChat{ChatID: int64(callbackQuery.From.ID)},
+				Text:      betypes.GetTexts().Chat.NotRegistered,
+				ParseMode: betypes.GetTexts().ParseMode,
+			}
+
+			_, err := bot.Send(msg)
+			if err != nil {
+				logger.ForError(err.Error())
+			}
+
+			logger.ForInfo(fmt.Sprintf("User %d, not registered.", callbackQuery.From.ID))
+			return false
+		} else if err != nil && err.Error() != redis.Nil.Error() {
+			logger.ForError(err.Error())
+		}
+
+		callbackQueryData := strings.Replace(callbackQuery.Data, SettingsReplyMarkupPrefix, "", 1)
+		switch {
+		case strings.Contains(callbackQueryData, OwnAgePrefix):
+			callbackQueryData = strings.Replace(callbackQueryData, OwnAgePrefix, "", 1)
+			if user.Age == callbackQueryData {
+				return true
+			}
+
+			user.Age = callbackQueryData
+		case strings.Contains(callbackQueryData, AgeOfTheInterlocutorPrefix):
+			callbackQueryData = strings.Replace(callbackQueryData, AgeOfTheInterlocutorPrefix, "", 1)
+			if user.AgeOfTheInterlocutor == callbackQueryData {
+				return true
+			}
+
+			user.AgeOfTheInterlocutor = callbackQueryData
+		case strings.Contains(callbackQueryData, OwnCityPrefix):
+			callbackQueryData = strings.Replace(callbackQueryData, OwnCityPrefix, "", 1)
+			if user.City == callbackQueryData {
+				return true
+			}
+
+			user.City = callbackQueryData
+		case strings.Contains(callbackQueryData, CityOfTheInterlocutorPrefix):
+			callbackQueryData = strings.Replace(callbackQueryData, CityOfTheInterlocutorPrefix, "", 1)
+			if user.CityOfTheInterlocutor == callbackQueryData {
+				return true
+			}
+
+			user.CityOfTheInterlocutor = callbackQueryData
+		case strings.Contains(callbackQueryData, OwnSexPrefix):
+			callbackQueryData = strings.Replace(callbackQueryData, OwnSexPrefix, "", 1)
+			if user.Sex == callbackQueryData {
+				return true
+			}
+
+			user.Sex = callbackQueryData
+		case strings.Contains(callbackQueryData, SexOfTheInterlocutorPrefix):
+			callbackQueryData = strings.Replace(callbackQueryData, SexOfTheInterlocutorPrefix, "", 1)
+			if user.SexOfTheInterlocutor == callbackQueryData {
+				return true
+			}
+
+			user.SexOfTheInterlocutor = callbackQueryData
+		default:
+			return false
+		}
+
+		err = database.DB.SaveUser(*user)
+		if err != nil {
+			logger.ForError(err.Error())
+		}
+
+		return true
+	}()
+
+	if haveUserSettingsBeenChanged {
+		_, err := bot.AnswerCallbackQuery(tgbotapi.NewCallback(callbackQuery.ID,
+			betypes.GetTexts().ReplyKeyboardMarkup.Changed))
+		if err != nil {
+			logger.ForError(err.Error())
+		}
+
+		settingsInlineKeyboard := settings.FindInlineKeyboard(SettingsReplyMarkupPrefix + SettingsReplyMarkupName)
+		if settingsInlineKeyboard == nil {
+			logger.ForWarning("Inline keyboard not found. Unknown callback.")
+			return
+		}
+
+		_, err = bot.Send(tgbotapi.NewEditMessageReplyMarkup(int64(callbackQuery.From.ID),
+			callbackQuery.Message.MessageID, *settingsInlineKeyboard))
+		if err != nil {
+			logger.ForError(err.Error())
+		}
+	}
+}
+
+// GetSettings return settings(Markup).
+func (Settings) GetSettings() Markups {
 	return settings
 }

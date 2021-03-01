@@ -7,17 +7,17 @@ import (
 )
 
 type (
-	// ReplyMarkup struct for saving InlineKeyboardMarkup
-	ReplyMarkup struct {
+	// Markup struct for saving InlineKeyboardMarkup
+	Markup struct {
 		Name                 string                        `json:"name"`
 		InlineKeyboardMarkup tgbotapi.InlineKeyboardMarkup `json:"inline_keyboard_markup"`
 	}
 
-	// ReplyMarkups reply markups array([]ReplyMarkup)
-	ReplyMarkups []ReplyMarkup
+	// Markups reply markups array([]Markup)
+	Markups []Markup
 )
 
-// ReplyMarkup close callback.
+// Markup close callback.
 const (
 	CloseCallback = "CLOSE"
 	DoesNotMatter = "DOES NOT MATTER"
@@ -29,31 +29,26 @@ func IsThereCloseCallback(callbackQueryData string) bool {
 	return strings.Contains(callbackQueryData, CloseCallback)
 }
 
-// FindInlineKeyboardMarkup return *tgbotapi.InlineKeyboardMarkup by reply markup name.
+// FindInlineKeyboard return *tgbotapi.InlineKeyboardMarkup by reply markup name.
 //
 // Return nil if reply markup do not found.
-func (m ReplyMarkups) FindInlineKeyboardMarkup(replyMarkupName string) *tgbotapi.InlineKeyboardMarkup {
+func (m Markups) FindInlineKeyboard(replyMarkupName string) *tgbotapi.InlineKeyboardMarkup {
 	for _, markup := range m {
 		if !strings.EqualFold(markup.Name, replyMarkupName) {
 			continue
 		}
 
-		buttons := make([][]tgbotapi.InlineKeyboardButton, len(markup.InlineKeyboardMarkup.InlineKeyboard))
-		for i := 0; i < len(markup.InlineKeyboardMarkup.InlineKeyboard); i++ {
-			for j := 0; j < len(markup.InlineKeyboardMarkup.InlineKeyboard[i]); j++ {
-				buttons[i] = append(buttons[i], tgbotapi.InlineKeyboardButton{
-					Text:                         markup.InlineKeyboardMarkup.InlineKeyboard[i][j].Text,
-					URL:                          markup.InlineKeyboardMarkup.InlineKeyboard[i][j].URL,
-					CallbackData:                 markup.InlineKeyboardMarkup.InlineKeyboard[i][j].CallbackData,
-					SwitchInlineQuery:            markup.InlineKeyboardMarkup.InlineKeyboard[i][j].SwitchInlineQuery,
-					SwitchInlineQueryCurrentChat: markup.InlineKeyboardMarkup.InlineKeyboard[i][j].SwitchInlineQueryCurrentChat,
-					CallbackGame:                 markup.InlineKeyboardMarkup.InlineKeyboard[i][j].CallbackGame,
-					Pay:                          markup.InlineKeyboardMarkup.InlineKeyboard[i][j].Pay,
-				})
+		newButtons := make([][]tgbotapi.InlineKeyboardButton, len(markup.InlineKeyboardMarkup.InlineKeyboard))
+		for i, buttons := range markup.InlineKeyboardMarkup.InlineKeyboard {
+			for _, button := range buttons {
+				newButtons[i] = append(newButtons[i], tgbotapi.InlineKeyboardButton{Text: button.Text, URL: button.URL,
+					CallbackData: button.CallbackData, SwitchInlineQuery: button.SwitchInlineQuery,
+					SwitchInlineQueryCurrentChat: button.SwitchInlineQueryCurrentChat, CallbackGame: button.CallbackGame,
+					Pay: button.Pay})
 			}
 		}
 
-		return &tgbotapi.InlineKeyboardMarkup{InlineKeyboard: buttons}
+		return &tgbotapi.InlineKeyboardMarkup{InlineKeyboard: newButtons}
 	}
 
 	return nil

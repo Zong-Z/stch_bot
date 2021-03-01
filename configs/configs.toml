@@ -2,6 +2,7 @@
 webhook = "{WEBHOOK}" # If the field is empty("") or webhook is invalid, the bot starts using "Polling".
 token = "{TOKEN}" # Telegram bot token.
 port = "8090" # If you wont to change this bot port, you also need change bot port in "docker-compose.yml".
+channel_id = "" # If the field is empty("") or ID is invalid, the bot does not check the group subscription.
     [bot.polling]
     offset = 0
     limit = 0

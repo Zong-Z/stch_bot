@@ -7,12 +7,12 @@ import (
 	"github.com/google/uuid"
 )
 
-// NewChat return new *Chat with unique UUID.
+// NewChat returns the *Chat with the UUID.
 func NewChat() *Chat {
 	UUID := uuid.New().String()
 	if strings.EqualFold(UUID, "") {
 		err := "Error, bad UUID."
-		logger.ForLog(err)
+		logger.ForInfo(err)
 		panic(err)
 	}
 
@@ -22,12 +22,14 @@ func NewChat() *Chat {
 	}
 }
 
-// AddUser add User to Chat.
+// AddUser adds a user to the chat.
 func (c *Chat) AddUser(user User) {
 	c.Users = append(c.Users, user)
 }
 
-// DeleteUserFromChat removes the user from the chat.
+// DeleteUserFromChat removes the user from the chat room he is in.
+//
+// If the user is not in the chat, does nothing.
 func (c *Chat) DeleteUserFromChat(userID int) {
 	for i := 0; i < len(c.Users); i++ {
 		if c.Users[i].ID == userID {
@@ -38,8 +40,10 @@ func (c *Chat) DeleteUserFromChat(userID int) {
 	}
 }
 
-// GetUserInterlocutors returns User interlocutors if User is in Chat.
-func (c *Chat) GetUserInterlocutors(userID int) []User {
+// GetInterlocutorsByUserID returns all interlocutors by user ID.
+//
+// If the user is not in the chat, or there are no interlocutors yet, returns nil.
+func (c *Chat) GetInterlocutorsByUserID(userID int) []User {
 	if !c.IsUserInChat(userID) {
 		return nil
 	}
@@ -58,7 +62,7 @@ func (c *Chat) GetUserInterlocutors(userID int) []User {
 	return nil
 }
 
-// IsUserInChat returns true if user is in chat.
+// IsUserInChat returns true if the user is in the chat.
 func (c *Chat) IsUserInChat(userID int) bool {
 	for i := 0; i < len(c.Users); i++ {
 		if c.Users[i].ID == userID {

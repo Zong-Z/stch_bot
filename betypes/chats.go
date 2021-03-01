@@ -1,8 +1,8 @@
 package betypes
 
-// NewChats return *Chats.
+// NewChats returns *Chats.
 //
-// In goroutine starts adding users to chats from Queue.
+// The StartAddingUsers function starts working in goroutine.
 func NewChats(usersCount, buffer int) *Chats {
 	c := &Chats{
 		Chats:      make([]Chat, 0),
@@ -15,9 +15,11 @@ func NewChats(usersCount, buffer int) *Chats {
 	return c
 }
 
-// StartAddingUsers adds users to chats form Queue.
+// StartAddingUsers takes the user from the queue.
+// Adds him to the chat taking into account the settings that the user specified (gender, age, city).
 //
-// Recommended run in goroutine.
+// Blocks the thread in which this function is running,
+// since it has an infinite loop. It is recommended to run in goroutine.
 func (c *Chats) StartAddingUsers() {
 	for u := range c.Queue {
 		if len(c.Chats) == 0 {
@@ -37,14 +39,15 @@ func (c *Chats) StartAddingUsers() {
 	}
 }
 
-// AddChat adds the Chat to []Chat.
+// AddChat adds new chat.
 func (c *Chats) AddChat(chat Chat) {
 	c.Chats = append(c.Chats, chat)
 }
 
-// FindSuitableChatsForUser returns all suitable chats for the User.
+// FindSuitableChatsForUser returns all chats to which the user can be added.
+// Takes into account the settings specified by the user (gender, age, city).
 //
-// Takes into account the user's age, city, age of the interlocutors and the city of the user.
+// Returns a nil if no chat has been matched.
 func (c *Chats) FindSuitableChatsForUser(user User) []*Chat {
 	chats := make([]*Chat, 0)
 	for i := 0; i < len(c.Chats); i++ {
@@ -66,12 +69,14 @@ func (c *Chats) FindSuitableChatsForUser(user User) []*Chat {
 	return nil
 }
 
-// AddUserToQueue adds user to Queue.
+// AddUserToQueue adds a user to the queue.
 func (c *Chats) AddUserToQueue(user User) {
 	c.Queue <- user
 }
 
-// DeleteUserFromChat removes the user from the chat.
+// DeleteUserFromChat removes the user from the chat he is in.
+//
+// If the user is not in the chat does not do anything.
 func (c *Chats) DeleteUserFromChat(userID int) {
 	for i := 0; i < len(c.Chats); i++ {
 		for j := 0; j < len(c.Chats[i].Users); j++ {
@@ -85,7 +90,9 @@ func (c *Chats) DeleteUserFromChat(userID int) {
 	}
 }
 
-// DeleteChatWithUser delete the chat in which there is a User.
+// DeleteChatWithUser deletes the chat that the user is in.
+//
+// If the user is not in the chat does not do anything.
 func (c *Chats) DeleteChatWithUser(userID int) {
 	for i := 0; i < len(c.Chats); i++ {
 		for j := 0; j < len(c.Chats[i].Users); j++ {
@@ -98,22 +105,24 @@ func (c *Chats) DeleteChatWithUser(userID int) {
 	}
 }
 
-// GetUserInterlocutors returns User interlocutors if User is in Chat.
-func (c *Chats) GetUserInterlocutors(userID int) []User {
+// GetInterlocutorsByUserID returns all interlocutors by user ID.
+//
+// If the user is not in the chat, or there are no interlocutors yet, returns nil.
+func (c *Chats) GetInterlocutorsByUserID(userID int) []User {
 	if !c.IsUserInChat(userID) {
 		return nil
 	}
 
 	for i := 0; i < len(c.Chats); i++ {
 		if c.Chats[i].IsUserInChat(userID) {
-			return c.Chats[i].GetUserInterlocutors(userID)
+			return c.Chats[i].GetInterlocutorsByUserID(userID)
 		}
 	}
 
 	return nil
 }
 
-// IsUserInChat returns true if the user is in chat.
+// IsUserInChat returns true if the user is in the chat.
 func (c *Chats) IsUserInChat(userID int) bool {
 	for i := 0; i < len(c.Chats); i++ {
 		if c.Chats[i].IsUserInChat(userID) {
