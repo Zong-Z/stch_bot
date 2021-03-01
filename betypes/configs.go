@@ -1,20 +1,22 @@
 package betypes
 
 import (
-	"fmt"
 	"io/ioutil"
 	"telegram-chat_bot/logger"
 
 	"github.com/pelletier/go-toml"
 )
 
-// Config struct for saving bot settings.
+const configsFile = "configs/configs.toml"
+
+// Config structure to save the settings of the bot, database, etc.
 type Config struct {
 	Bot struct {
-		Webhook string `toml:"webhook"`
-		Token   string `toml:"token"`
-		Port    string `toml:"port"`
-		Polling struct {
+		Webhook   string `toml:"webhook"`
+		Token     string `toml:"token"`
+		Port      string `toml:"port"`
+		ChannelID string `toml:"channel_id"`
+		Polling   struct {
 			Offset  int `toml:"offset"`
 			Limit   int `toml:"limit"`
 			Timeout int `toml:"timeout"`
@@ -36,18 +38,18 @@ type Config struct {
 var config Config
 
 func init() {
-	b, err := ioutil.ReadFile("configs/configs.toml")
+	b, err := ioutil.ReadFile(configsFile)
 	if err != nil {
-		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+		logger.ForWarning(err.Error())
 	}
 
 	err = toml.Unmarshal(b, &config)
 	if err != nil {
-		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+		logger.ForWarning(err.Error())
 	}
 }
 
-// GetConfig return bot config.
+// GetConfig returns the configuration.
 func GetConfig() Config {
 	return config
 }

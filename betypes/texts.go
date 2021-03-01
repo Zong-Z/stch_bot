@@ -2,12 +2,13 @@ package betypes
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"telegram-chat_bot/logger"
 )
 
-// Text struct for saving texts and bot commands.
+const textsFile = "configs/texts.json"
+
+// Text is a structure for saving all necessary texts.
 type Text struct {
 	Commands struct {
 		Start struct {
@@ -51,18 +52,18 @@ type Text struct {
 var text Text
 
 func init() {
-	b, err := ioutil.ReadFile("configs/texts.json")
+	b, err := ioutil.ReadFile(textsFile)
 	if err != nil {
-		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+		logger.ForInfo(err.Error())
 	}
 
 	err = json.Unmarshal(b, &text)
 	if err != nil {
-		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+		logger.ForInfo(err.Error())
 	}
 }
 
-// GetTexts return texts and bot commands.
+// GetTexts returns the texts.
 func GetTexts() Text {
 	return text
 }

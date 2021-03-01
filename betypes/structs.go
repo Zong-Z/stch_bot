@@ -2,10 +2,10 @@ package betypes
 
 import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
-// UserNil if the someone field in User struct is not set.
+// UserNil If there is a field in the User structure that is not set, you can use this constant.
 const UserNil = "user: nil"
 
-// User struct for saving user data.
+// User is a structure for storing user information.
 type User struct {
 	tgbotapi.User
 	Age                   string `json:"age"`
@@ -16,18 +16,18 @@ type User struct {
 	SexOfTheInterlocutor  string `json:"sex_of_the_interlocutor"`
 }
 
-// Chat struct for saving users([]User) in chat.
+// Chat is a structure that stores the users who are in the chat and the chat identifier.
 type Chat struct {
 	Users []User `json:"users"`
 	ID    string `json:"id"`
 }
 
-// Queue users queue.
+// Queue user queue.
 type Queue chan User
 
-// Chats struct for saving all Chat with User queue.
+// Chats has a queue and an array of chats for a certain number of users.
 type Chats struct {
 	Chats      []Chat `json:"chats"`
-	UsersCount int    `json:"users_count"` // UsersCount max users count in one chat.
+	UsersCount int    `json:"users_count"` // Maximum number of users in one chat.
 	Queue
 }

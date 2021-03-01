@@ -15,10 +15,25 @@ var (
 	logFile    = log.New(outfile, "", 0)
 )
 
-// ForLog this is a function to display the passed arguments
-// in the console and save to a file.
-func ForLog(v ...interface{}) {
-	str := fmt.Sprintf("%s: %v", time.Now().Format(TimeFormat), v)
+// ForInfo writes the data transferred to the function in the file with the information tag.
+func ForInfo(v ...interface{}) {
+	str := fmt.Sprintf("%s |INFO|: %v", time.Now().Format(TimeFormat), v)
 	logFile.Println(str)
 	log.Println(str)
+}
+
+// ForWarning writes the data transferred to the function in the file with the warning tag.
+func ForWarning(v ...interface{}) {
+	str := fmt.Sprintf("%s |WARNING|: %v\n", time.Now().Format(TimeFormat), v)
+	logFile.Println(str)
+	log.Println(str)
+}
+
+// ForError writes the data transferred to the function in the file with the error tag and and stops execution of the
+// program.
+func ForError(v ...interface{}) {
+	str := fmt.Sprintf("%s |ERROR|: %v\n", time.Now().Format(TimeFormat), v)
+	logFile.Println(str)
+	log.Println(str)
+	panic(str)
 }

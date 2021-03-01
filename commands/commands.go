@@ -12,18 +12,18 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-// Start sends to user start text and save him to database.
+// Start saves the user to the database and sends the start text.
+//
+// If the user is already saved, does nothing.
 func Start(user betypes.User, bot *tgbotapi.BotAPI) {
 	_, err := database.DB.GetUser(user.ID)
 	if err != nil && err.Error() == redis.Nil.Error() {
 		err := database.DB.SaveUser(user)
 		if err != nil {
-			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-			panic(err)
+			logger.ForError(err.Error())
 		}
 	} else if err != nil && err.Error() != redis.Nil.Error() {
-		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-		panic(err)
+		logger.ForError(err.Error())
 	}
 
 	msg := tgbotapi.MessageConfig{
@@ -34,12 +34,11 @@ func Start(user betypes.User, bot *tgbotapi.BotAPI) {
 
 	_, err = bot.Send(msg)
 	if err != nil {
-		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-		panic(err)
+		logger.ForError(err.Error())
 	}
 }
 
-// Help sends help text to the user.
+// Help sends the user help.
 func Help(chatID int, bot *tgbotapi.BotAPI) {
 	msg := tgbotapi.MessageConfig{
 		BaseChat:  tgbotapi.BaseChat{ChatID: int64(chatID)},
@@ -49,12 +48,11 @@ func Help(chatID int, bot *tgbotapi.BotAPI) {
 
 	_, err := bot.Send(msg)
 	if err != nil {
-		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-		panic(err)
+		logger.ForError(err.Error())
 	}
 }
 
-// StartChatting starts a chat with a random user or users(See ).
+// StartChatting starts chatting with a random user.
 func StartChatting(userID int, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
 	msg := tgbotapi.MessageConfig{
 		BaseChat:  tgbotapi.BaseChat{ChatID: int64(userID)},
@@ -68,14 +66,12 @@ func StartChatting(userID int, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
 			msg.Text = betypes.GetTexts().Chat.NotRegistered
 			_, err := bot.Send(msg)
 			if err != nil {
-				logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-				panic(err)
+				logger.ForError(err.Error())
 			}
 
 			return
 		} else if err != nil {
-			logger.ForLog(fmt.Sprintf("Error, %s.", err.Error()))
-			panic(err)
+			logger.ForError(err.Error())
 		}
 
 		chats.AddUserToQueue(*user)
@@ -85,11 +81,10 @@ func StartChatting(userID int, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
 
 	_, err := bot.Send(msg)
 	if err != nil {
-		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-		panic(err)
+		logger.ForError(err.Error())
 	}
 
-	interlocutors := chats.GetUserInterlocutors(userID)
+	interlocutors := chats.GetInterlocutorsByUserID(userID)
 	if interlocutors != nil && len(interlocutors)+1 >= 2 {
 		msg := tgbotapi.MessageConfig{
 			Text:      betypes.GetTexts().Chat.ChatFound,
@@ -101,8 +96,7 @@ func StartChatting(userID int, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
 
 			_, err := bot.Send(msg)
 			if err != nil {
-				logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-				panic(err)
+				logger.ForError(err.Error())
 			}
 		}
 
@@ -110,21 +104,21 @@ func StartChatting(userID int, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
 
 		_, err := bot.Send(msg)
 		if err != nil {
-			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-			panic(err)
+			logger.ForError(err.Error())
 		}
 	}
 }
 
-// StopChatting if there are more than one people in the chat, removes the user from the chat.
-// If less than two interlocutors delete the chat.
+// StopChatting stops chatting.
+//
+// If there are fewer than two users in the chat, deletes the chat completely.
 func StopChatting(userID int, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
 	msg := tgbotapi.MessageConfig{
 		ParseMode: betypes.GetTexts().ParseMode,
 		Text:      betypes.GetTexts().Chat.ChatEnded,
 	}
 
-	userInterlocutors := chats.GetUserInterlocutors(userID)
+	userInterlocutors := chats.GetInterlocutorsByUserID(userID)
 	if userInterlocutors == nil {
 		if chats.IsUserInChat(userID) {
 			chats.DeleteChatWithUser(userID)
@@ -132,8 +126,7 @@ func StopChatting(userID int, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
 			msg.ChatID = int64(userID)
 			_, err := bot.Send(msg)
 			if err != nil {
-				logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-				panic(err)
+				logger.ForError(err.Error())
 			}
 		}
 
@@ -146,7 +139,7 @@ func StopChatting(userID int, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
 			msg.ChatID = int64(userInterlocutors[i].ID)
 			msg.Text = fmt.Sprintf("*INTERLOCUTOR %d LEFT THE CHAT*", func() int {
 				var userNumber int
-				interlocutors := chats.GetUserInterlocutors(userInterlocutors[i].ID)
+				interlocutors := chats.GetInterlocutorsByUserID(userInterlocutors[i].ID)
 				for j := 0; j < len(interlocutors); j++ {
 					if userID == interlocutors[j].ID {
 						userNumber = j + 1
@@ -158,8 +151,7 @@ func StopChatting(userID int, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
 
 			_, err := bot.Send(msg)
 			if err != nil {
-				logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-				panic(err)
+				logger.ForError(err.Error())
 			}
 		}
 		chats.DeleteUserFromChat(userID)
@@ -168,8 +160,7 @@ func StopChatting(userID int, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
 			msg.ChatID = int64(userInterlocutors[i].ID)
 			_, err := bot.Send(msg)
 			if err != nil {
-				logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-				panic(err)
+				logger.ForError(err.Error())
 			}
 		}
 		chats.DeleteChatWithUser(userID)
@@ -179,14 +170,14 @@ func StopChatting(userID int, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
 
 	_, err := bot.Send(msg)
 	if err != nil {
-		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-		panic(err)
+		logger.ForError(err.Error())
 	}
 }
 
-// Settings sends to user settings reply markup.
+// Settings sends the user a keyboard with settings.
 func Settings(userID int, bot *tgbotapi.BotAPI) {
-	settingsInlineKeyboardMarkup := markups.GetSettings().FindInlineKeyboardMarkup(
+	settings := markups.Settings{}
+	settingsInlineKeyboardMarkup := settings.GetSettings().FindInlineKeyboard(
 		markups.SettingsReplyMarkupPrefix + markups.SettingsReplyMarkupName)
 	if settingsInlineKeyboardMarkup == nil {
 		return
@@ -200,12 +191,11 @@ func Settings(userID int, bot *tgbotapi.BotAPI) {
 
 	_, err := bot.Send(msg)
 	if err != nil {
-		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-		panic(err)
+		logger.ForError(err.Error())
 	}
 }
 
-// Me sends information about itself to the user.
+// Me sends the user information about him.
 func Me(userID int, bot *tgbotapi.BotAPI) {
 	u, err := database.DB.GetUser(userID)
 	if err != nil && err.Error() == redis.Nil.Error() || u == nil {
@@ -217,14 +207,12 @@ func Me(userID int, bot *tgbotapi.BotAPI) {
 
 		_, err := bot.Send(msg)
 		if err != nil {
-			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-			panic(err)
+			logger.ForError(err.Error())
 		}
 
 		return
 	} else if err != nil && err.Error() != redis.Nil.Error() {
-		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-		panic(err)
+		logger.ForError(err.Error())
 	}
 
 	msg := tgbotapi.MessageConfig{
@@ -235,8 +223,8 @@ func Me(userID int, bot *tgbotapi.BotAPI) {
 				"🙍‍♂🙍‍♀📅*Interlocutor age:* %s.\n"+
 				"🌍*Your city:* %s.\n"+
 				"🙍‍♂🙍‍♀🌍*Interlocutor city:* %s.\n"+
-				"🙍‍♂🙍‍♀*Your sex:* %s.\n"+
-				"🙍‍♂🙍🌍‍♀*Sex of the interlocutor:* %s.",
+				"🙍‍♂🙍‍*Your sex:* %s.\n"+
+				"🙍‍♂🙍🌍‍*Sex of the interlocutor:* %s.",
 			u.Age, u.AgeOfTheInterlocutor, u.City, u.CityOfTheInterlocutor, u.Sex, u.SexOfTheInterlocutor,
 		),
 		ParseMode: "MARKDOWN",
@@ -244,7 +232,6 @@ func Me(userID int, bot *tgbotapi.BotAPI) {
 
 	_, err = bot.Send(msg)
 	if err != nil {
-		logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-		panic(err)
+		logger.ForError(err.Error())
 	}
 }

@@ -7,11 +7,9 @@ import (
 	"strings"
 	"telegram-chat_bot/betypes"
 	"telegram-chat_bot/commands"
-	database "telegram-chat_bot/db"
 	"telegram-chat_bot/logger"
 	"telegram-chat_bot/markups"
 
-	"github.com/go-redis/redis/v8"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -23,19 +21,18 @@ func main() {
 	bot, err := tgbotapi.NewBotAPI(betypes.GetConfig().Bot.Token)
 	chats := betypes.NewChats(betypes.GetConfig().Chat.Queue, betypes.GetConfig().Chat.Users)
 
-	logger.ForLog("Authorized on account.")
+	logger.ForInfo("Authorized on account")
 	if err != nil {
-		logger.ForLog(fmt.Sprintf("Error %s, creating bot.", err.Error()))
-		panic(err)
+		logger.ForError(err.Error())
 	}
 
-	logger.ForLog("Bot have created successfully.")
+	logger.ForInfo("Bot have created successfully")
 
 	var updates tgbotapi.UpdatesChannel
 	if !strings.EqualFold(betypes.GetConfig().Bot.Webhook, "") {
 		updates, err = setWebhook(bot)
 		if err != nil {
-			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
+			logger.ForWarning(err.Error())
 		}
 	}
 
@@ -43,26 +40,98 @@ func main() {
 		updates, err = setPolling(betypes.GetConfig().Bot.Polling.Offset, betypes.GetConfig().Bot.Polling.Limit,
 			betypes.GetConfig().Bot.Polling.Timeout, bot)
 		if err != nil {
-			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-			panic(err)
+			logger.ForError(err.Error())
 		}
 	}
 
 	for update := range updates {
-		logger.ForLog(fmt.Sprintf("Update ID - %d.", update.UpdateID))
-		checkUpdate(update, chats, bot)
+		logger.ForInfo(fmt.Sprintf("Update ID - %d", update.UpdateID))
+		go checkUpdate(update, chats, bot)
 	}
 }
 
 func checkUpdate(update tgbotapi.Update, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
-	if update.CallbackQuery != nil {
+	switch {
+	case update.CallbackQuery != nil:
 		checkCallbackQuery(*update.CallbackQuery, bot)
-	} else if update.Message != nil {
+		break
+	case update.Message != nil:
 		isCommand := update.Message.IsCommand()
 		isUserInChat := chats.IsUserInChat(update.Message.From.ID)
-		if isCommand {
-			checkCommands(*update.Message, chats, bot)
-		} else if !isCommand && !isUserInChat {
+		switch {
+		case isCommand:
+			checkCommand(*update.Message, chats, bot)
+			break
+		case !isCommand && isUserInChat: // Message to another user.
+			var msg tgbotapi.Chattable
+			interlocutors := chats.GetInterlocutorsByUserID(update.Message.From.ID)
+			if interlocutors == nil {
+				msg = tgbotapi.MessageConfig{
+					BaseChat:  tgbotapi.BaseChat{ChatID: int64(update.Message.From.ID)},
+					Text:      betypes.GetTexts().Chat.NotInChat,
+					ParseMode: betypes.GetTexts().ParseMode,
+				}
+
+				_, err := bot.Send(msg)
+				if err != nil {
+					logger.ForError(err.Error())
+				}
+
+				return
+			}
+
+			for i, interlocutor := range interlocutors {
+				switch {
+				case update.Message.Audio != nil:
+					msg = tgbotapi.NewAudioShare(int64(interlocutor.ID), update.Message.Audio.FileID)
+					break
+				case update.Message.Document != nil:
+					msg = tgbotapi.NewDocumentShare(int64(interlocutor.ID), update.Message.Document.FileID)
+					break
+				case update.Message.Animation != nil:
+					msg = tgbotapi.NewAnimationShare(int64(interlocutor.ID), update.Message.Animation.FileID)
+					break
+				case update.Message.Photo != nil:
+					msg = tgbotapi.NewPhotoShare(int64(interlocutor.ID), (*update.Message.Photo)[0].FileID)
+					break
+				case update.Message.Sticker != nil:
+					msg = tgbotapi.NewStickerShare(int64(interlocutor.ID), update.Message.Sticker.FileID)
+					break
+				case update.Message.Video != nil:
+					msg = tgbotapi.NewVideoShare(int64(interlocutor.ID), update.Message.Video.FileID)
+					break
+				case update.Message.VideoNote != nil:
+					msg = tgbotapi.NewVideoNoteShare(int64(interlocutor.ID), update.Message.VideoNote.Length,
+						update.Message.VideoNote.FileID)
+					break
+				case update.Message.Voice != nil:
+					msg = tgbotapi.NewVoiceShare(int64(interlocutor.ID), update.Message.Voice.FileID)
+					break
+				default:
+					if betypes.GetConfig().Chat.Users > 2 { // If there are more than two users in the chat.
+						msg = tgbotapi.MessageConfig{
+							BaseChat:  tgbotapi.BaseChat{ChatID: int64(interlocutor.ID)},
+							Text:      fmt.Sprintf("*INTERLOCUTOR %d:* %s", i+1, update.Message.Text),
+							ParseMode: "MARKDOWN",
+						}
+
+						break
+					}
+
+					msg = tgbotapi.MessageConfig{
+						BaseChat: tgbotapi.BaseChat{ChatID: int64(interlocutor.ID)},
+						Text:     update.Message.Text,
+					}
+				}
+
+				_, err := bot.Send(msg)
+				if err != nil {
+					logger.ForError(err.Error())
+				}
+			}
+
+			break
+		default:
 			msg := tgbotapi.MessageConfig{
 				BaseChat:  tgbotapi.BaseChat{ChatID: int64(update.Message.From.ID)},
 				Text:      betypes.GetTexts().Commands.Unknown.Text,
@@ -71,16 +140,13 @@ func checkUpdate(update tgbotapi.Update, chats *betypes.Chats, bot *tgbotapi.Bot
 
 			_, err := bot.Send(msg)
 			if err != nil {
-				logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-				panic(err)
+				logger.ForError(err.Error())
 			}
-		} else if !isCommand && isUserInChat {
-			sendMessageToUserInterlocutors(*update.Message, chats, bot)
 		}
 	}
 }
 
-func checkCommands(message tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
+func checkCommand(message tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
 	switch message.Command() {
 	case betypes.GetTexts().Commands.Start.Command:
 		commands.Start(*betypes.NewUser(tgbotapi.User{
@@ -109,244 +175,23 @@ func checkCommands(message tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi
 
 		_, err := bot.Send(msg)
 		if err != nil {
-			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-			panic(err)
+			logger.ForError(err.Error())
 		}
 	}
 }
 
 func checkCallbackQuery(callbackQuery tgbotapi.CallbackQuery, bot *tgbotapi.BotAPI) {
-	if markups.IsThereCloseCallback(callbackQuery.Data) {
+	settings := markups.Settings{}
+	switch {
+	case markups.IsThereCloseCallback(callbackQuery.Data):
 		_, err := bot.Send(tgbotapi.NewDeleteMessage(int64(callbackQuery.From.ID), callbackQuery.Message.MessageID))
 		if err != nil {
-			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-			panic(err)
+			logger.ForError(err.Error())
 		}
-	} else if markups.SettingsIsThereMarkupRequest(callbackQuery.Data) {
-		u, err := database.DB.GetUser(callbackQuery.From.ID)
-		if err != nil && err.Error() == redis.Nil.Error() || u == nil {
-			msg := tgbotapi.MessageConfig{
-				BaseChat:  tgbotapi.BaseChat{ChatID: int64(callbackQuery.From.ID)},
-				Text:      betypes.GetTexts().Chat.NotRegistered,
-				ParseMode: betypes.GetTexts().ParseMode,
-			}
-
-			_, err := bot.Send(msg)
-			if err != nil {
-				logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-				panic(err)
-			}
-		} else if err != nil && err.Error() != redis.Nil.Error() {
-			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-			panic(err)
-		}
-
-		inlineKeyboardMarkup := markups.GetSettings().FindInlineKeyboardMarkup(callbackQuery.Data)
-		if inlineKeyboardMarkup == nil {
-			return
-		}
-
-		for i := 0; i < len(inlineKeyboardMarkup.InlineKeyboard); i++ {
-			for j := 0; j < len(inlineKeyboardMarkup.InlineKeyboard[i]); j++ {
-				callbackData := strings.Replace(*inlineKeyboardMarkup.InlineKeyboard[i][j].CallbackData,
-					markups.SettingsReplyMarkupPrefix, "", 1)
-				if strings.EqualFold(callbackData, markups.OwnAgePrefix+u.Age) ||
-					strings.EqualFold(callbackData, markups.AgeOfTheInterlocutorPrefix+u.AgeOfTheInterlocutor) ||
-					strings.EqualFold(callbackData, markups.OwnCityPrefix+u.City) ||
-					strings.EqualFold(callbackData, markups.CityOfTheInterlocutorPrefix+u.CityOfTheInterlocutor) ||
-					strings.EqualFold(callbackData, markups.OwnSexPrefix+u.Sex) ||
-					strings.EqualFold(callbackData, markups.SexOfTheInterlocutorPrefix+u.SexOfTheInterlocutor) {
-					inlineKeyboardMarkup.InlineKeyboard[i][j].Text = fmt.Sprintf("➡%s⬅",
-						inlineKeyboardMarkup.InlineKeyboard[i][j].Text)
-				}
-			}
-		}
-
-		editMessageReplyMarkup := tgbotapi.NewEditMessageReplyMarkup(int64(callbackQuery.From.ID),
-			callbackQuery.Message.MessageID, *inlineKeyboardMarkup)
-
-		_, err = bot.Send(editMessageReplyMarkup)
-		if err != nil {
-			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-			panic(err)
-		}
-
-		_, err = bot.AnswerCallbackQuery(tgbotapi.NewCallback(callbackQuery.ID,
-			betypes.GetTexts().ReplyKeyboardMarkup.Opened))
-		if err != nil {
-			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-			panic(err)
-		}
-	} else if markups.SettingsIsThereCallbackForChangeUserData(callbackQuery.Data) {
-		settingsCallbackForChangeUserData(callbackQuery, bot)
-	}
-}
-
-func sendMessageToUserInterlocutors(message tgbotapi.Message, chats *betypes.Chats, bot *tgbotapi.BotAPI) {
-	var msg tgbotapi.Chattable
-	userInterlocutors := chats.GetUserInterlocutors(message.From.ID)
-	if userInterlocutors == nil {
-		msg = tgbotapi.MessageConfig{
-			BaseChat:  tgbotapi.BaseChat{ChatID: int64(message.From.ID)},
-			Text:      betypes.GetTexts().Chat.NotInChat,
-			ParseMode: betypes.GetTexts().ParseMode,
-		}
-
-		_, err := bot.Send(msg)
-		if err != nil {
-			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-			panic(err)
-		}
-	} else {
-		for i := 0; i < len(userInterlocutors); i++ {
-			if message.Audio != nil {
-				msg = tgbotapi.NewAudioShare(
-					int64(userInterlocutors[i].ID), message.Audio.FileID)
-			} else if message.Document != nil {
-				msg = tgbotapi.NewDocumentShare(
-					int64(userInterlocutors[i].ID), message.Document.FileID)
-			} else if message.Animation != nil {
-				msg = tgbotapi.NewAnimationShare(
-					int64(userInterlocutors[i].ID), message.Animation.FileID)
-			} else if message.Photo != nil {
-				msg = tgbotapi.NewPhotoShare(
-					int64(userInterlocutors[i].ID), (*message.Photo)[0].FileID)
-			} else if message.Sticker != nil {
-				msg = tgbotapi.NewStickerShare(
-					int64(userInterlocutors[i].ID), message.Sticker.FileID)
-			} else if message.Video != nil {
-				msg = tgbotapi.NewVideoShare(
-					int64(userInterlocutors[i].ID), message.Video.FileID)
-			} else if message.VideoNote != nil {
-				msg = tgbotapi.NewVideoNoteShare(int64(userInterlocutors[i].ID),
-					message.VideoNote.Length, message.VideoNote.FileID)
-			} else if message.Voice != nil {
-				msg = tgbotapi.NewVoiceShare(int64(userInterlocutors[i].ID), message.Voice.FileID)
-			} else {
-				if betypes.GetConfig().Chat.Users > 2 { // If there are more than two interlocutors.
-					msg = tgbotapi.MessageConfig{
-						BaseChat:  tgbotapi.BaseChat{ChatID: int64(userInterlocutors[i].ID)},
-						Text:      fmt.Sprintf("*INTERLOCUTOR %d:* %s", i+1, message.Text),
-						ParseMode: betypes.GetTexts().ParseMode,
-					}
-				} else {
-					msg = tgbotapi.MessageConfig{
-						BaseChat: tgbotapi.BaseChat{ChatID: int64(userInterlocutors[i].ID)},
-						Text:     message.Text,
-					}
-				}
-			}
-
-			_, err := bot.Send(msg)
-			if err != nil {
-				logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-				panic(err)
-			}
-		}
-	}
-}
-
-func settingsCallbackForChangeUserData(callbackQuery tgbotapi.CallbackQuery, bot *tgbotapi.BotAPI) {
-	if func() bool {
-		u, err := database.DB.GetUser(callbackQuery.From.ID)
-		if err != nil && err.Error() == redis.Nil.Error() {
-			msg := tgbotapi.MessageConfig{
-				BaseChat:  tgbotapi.BaseChat{ChatID: int64(callbackQuery.From.ID)},
-				Text:      betypes.GetTexts().Chat.NotRegistered,
-				ParseMode: betypes.GetTexts().ParseMode,
-			}
-
-			_, err := bot.Send(msg)
-			if err != nil {
-				logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-				panic(err)
-			}
-
-			return false
-		}
-
-		if err != nil {
-			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-			panic(err)
-		}
-
-		callbackQueryData := strings.Replace(callbackQuery.Data, markups.SettingsReplyMarkupPrefix, "", 1)
-		if strings.Contains(callbackQueryData, markups.OwnAgePrefix) {
-			callbackQueryData = strings.Replace(callbackQueryData, markups.OwnAgePrefix, "", 1)
-			if u.Age == callbackQueryData {
-				return true
-			}
-
-			u.Age = callbackQueryData
-		} else if strings.Contains(callbackQueryData, markups.AgeOfTheInterlocutorPrefix) {
-			callbackQueryData = strings.Replace(callbackQueryData, markups.AgeOfTheInterlocutorPrefix, "", 1)
-			if u.AgeOfTheInterlocutor == callbackQueryData {
-				return true
-			}
-
-			u.AgeOfTheInterlocutor = callbackQueryData
-		} else if strings.Contains(callbackQueryData, markups.OwnCityPrefix) {
-			callbackQueryData = strings.Replace(callbackQueryData, markups.OwnCityPrefix, "", 1)
-			if u.City == callbackQueryData {
-				return true
-			}
-
-			u.City = callbackQueryData
-		} else if strings.Contains(callbackQueryData, markups.CityOfTheInterlocutorPrefix) {
-			callbackQueryData = strings.Replace(callbackQueryData, markups.CityOfTheInterlocutorPrefix, "", 1)
-			if u.CityOfTheInterlocutor == callbackQueryData {
-				return true
-			}
-
-			u.CityOfTheInterlocutor = callbackQueryData
-		} else if strings.Contains(callbackQueryData, markups.OwnSexPrefix) {
-			callbackQueryData = strings.Replace(callbackQueryData, markups.OwnSexPrefix, "", 1)
-			if u.Sex == callbackQueryData {
-				return true
-			}
-
-			u.Sex = callbackQueryData
-		} else if strings.Contains(callbackQueryData, markups.SexOfTheInterlocutorPrefix) {
-			callbackQueryData = strings.Replace(callbackQueryData, markups.SexOfTheInterlocutorPrefix, "", 1)
-			if u.SexOfTheInterlocutor == callbackQueryData {
-				return true
-			}
-
-			u.SexOfTheInterlocutor = callbackQueryData
-		} else {
-			return false
-		}
-
-		err = database.DB.SaveUser(*u)
-		if err != nil {
-			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-			panic(err)
-		}
-
-		return true
-	}() {
-		_, err := bot.AnswerCallbackQuery(
-			tgbotapi.NewCallback(callbackQuery.ID, betypes.GetTexts().ReplyKeyboardMarkup.Changed))
-		if err != nil {
-			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-			panic(err)
-		}
-
-		settingsInlineKeyboard := markups.GetSettings().FindInlineKeyboardMarkup(
-			markups.SettingsReplyMarkupPrefix + markups.SettingsReplyMarkupName)
-		if settingsInlineKeyboard == nil {
-			return
-		}
-
-		editMessageReplyMarkup := tgbotapi.NewEditMessageReplyMarkup(int64(callbackQuery.From.ID),
-			callbackQuery.Message.MessageID, *settingsInlineKeyboard)
-		_, err = bot.Send(editMessageReplyMarkup)
-		if err != nil {
-			logger.ForLog(fmt.Sprintf("Error %s.", err.Error()))
-			panic(err)
-		}
-
-		return
+	case settings.IsMarkupRequest(callbackQuery.Data):
+		settings.SendMarkupByCallbackQuery(callbackQuery, bot)
+	case settings.IsCallbackForChangeUserData(callbackQuery.Data):
+		settings.ChangeUserDataByCallbackQuery(callbackQuery, bot)
 	}
 }
 
