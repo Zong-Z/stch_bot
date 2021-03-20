@@ -4,15 +4,15 @@ package betypes
 //
 // The StartAddingUsers function starts working in goroutine.
 func NewChats(usersCount, buffer int) *Chats {
-	c := &Chats{
+	chats := &Chats{
 		Chats:      make([]Chat, 0),
 		UsersCount: usersCount,
 		Queue:      make(chan User, buffer),
 	}
 
-	go c.StartAddingUsers()
+	go chats.StartAddingUsers()
 
-	return c
+	return chats
 }
 
 // StartAddingUsers takes the user from the queue.
@@ -56,10 +56,16 @@ func (c *Chats) FindSuitableChatsForUser(user User) []*Chat {
 			continue
 		}
 
-		u := c.Chats[i].Users[len(c.Chats[i].Users)-1]
-		if user.IsSuitableAge(u) && user.IsSuitableCity(u) && user.IsSuitableSex(u) {
+		func(suitable ...func(User) bool) {
+			u := c.Chats[i].Users[len(c.Chats[i].Users)-1]
+			for _, f := range suitable {
+				if !f(u) {
+					return
+				}
+			}
+
 			chats = append(chats, &c.Chats[i])
-		}
+		}(user.IsSuitableAge, user.IsSuitableCity, user.IsSuitableSex)
 	}
 
 	if len(chats) != 0 {

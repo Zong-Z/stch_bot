@@ -54,12 +54,12 @@ var text Text
 func init() {
 	b, err := ioutil.ReadFile(textsFile)
 	if err != nil {
-		logger.ForInfo(err.Error())
+		logger.ForWarning(err.Error())
 	}
 
 	err = json.Unmarshal(b, &text)
 	if err != nil {
-		logger.ForInfo(err.Error())
+		logger.ForWarning(err.Error())
 	}
 }
 

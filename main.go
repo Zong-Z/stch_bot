@@ -30,9 +30,9 @@ func main() {
 
 	var updates tgbotapi.UpdatesChannel
 	if !strings.EqualFold(betypes.GetConfig().Bot.Webhook, "") {
-		updates, err = setWebhook(bot)
+		updates, err = setWebhook(betypes.GetConfig().Bot.Webhook, bot)
 		if err != nil {
-			logger.ForWarning(err.Error())
+			logger.ForError(err.Error())
 		}
 	}
 
@@ -210,8 +210,8 @@ func setPolling(offset, limit, timeout int, bot *tgbotapi.BotAPI) (tgbotapi.Upda
 	return updates, nil
 }
 
-func setWebhook(bot *tgbotapi.BotAPI) (tgbotapi.UpdatesChannel, error) {
-	_, err := bot.SetWebhook(tgbotapi.NewWebhook(betypes.GetConfig().Bot.Webhook))
+func setWebhook(webhook string, bot *tgbotapi.BotAPI) (tgbotapi.UpdatesChannel, error) {
+	_, err := bot.SetWebhook(tgbotapi.NewWebhook(webhook))
 	if err != nil {
 		return nil, err
 	}

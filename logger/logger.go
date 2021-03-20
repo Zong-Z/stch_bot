@@ -34,6 +34,5 @@ func ForWarning(v ...interface{}) {
 func ForError(v ...interface{}) {
 	str := fmt.Sprintf("%s |ERROR|: %v\n", time.Now().Format(TimeFormat), v)
 	logFile.Println(str)
-	log.Println(str)
-	panic(str)
+	log.Fatalln(str)
 }

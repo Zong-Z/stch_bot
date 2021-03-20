@@ -1,24 +1,14 @@
 package betypes
 
 import (
-	"strings"
-	"telegram-chat_bot/logger"
-
 	"github.com/google/uuid"
 )
 
 // NewChat returns the *Chat with the UUID.
 func NewChat() *Chat {
-	UUID := uuid.New().String()
-	if strings.EqualFold(UUID, "") {
-		err := "Error, bad UUID."
-		logger.ForInfo(err)
-		panic(err)
-	}
-
 	return &Chat{
 		Users: make([]User, 0),
-		ID:    UUID,
+		ID:    uuid.New().String(),
 	}
 }
 
@@ -69,5 +59,6 @@ func (c *Chat) IsUserInChat(userID int) bool {
 			return true
 		}
 	}
+
 	return false
 }
